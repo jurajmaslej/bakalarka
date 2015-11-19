@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="UTF-8">
+    <title>Bezpečné prihlasovanie pomocou mobilnej aplikácie by jurajmaslej</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="stylesheets/normalize.css" media="screen">
+    <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,700' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/github-light.css" media="screen">
+  </head>
+  <body>
+    <section class="page-header">
+      <h1 class="project-name">Bezpečné prihlasovanie pomocou mobilnej aplikácie</h1>
+      <h2 class="project-tagline">bakalárska práca 2015/16</h2>
+      <a href="https://github.com/jurajmaslej/bakalarka" class="btn">View on GitHub</a>
+      <a href="https://github.com/jurajmaslej/bakalarka/zipball/master" class="btn">Download .zip</a>
+      <a href="https://github.com/jurajmaslej/bakalarka/tarball/master" class="btn">Download .tar.gz</a>
+    </section>
+
+    <section class="main-content">
+      <h2>
+<a id="cieľ" class="anchor" href="#cie%C4%BE" aria-hidden="true"><span class="octicon octicon-link"></span></a>Cieľ</h2>
+
+<p>Cieľom práce je navrhnúť autorizačný systém na bezpečné prihlasovanie sa do webovskej aplikácie pomocou generátora jednorázového hesla (one-time-password), ktoré vygeneruje mobilná aplikácia.</p>
+
+<h2>
+<a id="anotácia" class="anchor" href="#anot%C3%A1cia" aria-hidden="true"><span class="octicon octicon-link"></span></a>Anotácia</h2>
+
+<p>Mobilná aplikácia dostane základné informácie o užívateľovi (po bežnej kontrole prostredníctvom zadaného emailu používateľa) prostredníctvom QR kódu vygenerovaným backend webovskou aplikáciou. Na základe informácií v prístupnom QR kóde vygeneruje jednorázové heslo na prihlásenie sa do backend aplikácie. Backend na webe vykonáva rovnakú činnosť ako mobilná aplikácia. Generovanie jednorázového hesla z QR kódu prebieha pomocou HOTP, TOTP alebo "challenge-response" autentifikáciou. Samotným snímaním QR kódu sa uskutoční prenos citlivých údajov, na základe ktorých sa pomocou HOTP, TOTP alebo challenge response generuje jednorázové prihlasovacie heslo. Citlivé údaje sú zdieľané, teda pôjde o symetrické šifrovanie. Je potreba porovnať HOTP, TOTP a challenge response, a zistiť ktorý spôsob je pre danú aplikáciu najvýhodnejší. Mobilná aplikácia má pracovať v off-line režime.</p>
+
+<h2>
+<a id="popis-výslednej-funkčnosti" class="anchor" href="#popis-v%C3%BDslednej-funk%C4%8Dnosti" aria-hidden="true"><span class="octicon octicon-link"></span></a>Popis výslednej funkčnosti</h2>
+
+<h4>
+<a id="prvé-prihlásenie" class="anchor" href="#prv%C3%A9-prihl%C3%A1senie" aria-hidden="true"><span class="octicon octicon-link"></span></a>Prvé prihlásenie</h4>
+
+<p>Užívateľovi sa pošle mailom link na adresu , kde si vytvorí nové prihlasovacie meno a heslo do systému. Po jeho zadaní sa presmeruje na stránku z ktorej si stiahne samotnú aplikáciu. Zároveň sa vygeneruje seed, ktorý sa uloží do databázy  Potom sa mu zobrazí QR kód, ktorý nasníma samotnou aplikáciou. Následne sa presmeruje na prihlasovaciu stránku, ktorú bude používať pri ďalších prihláseniach.</p>
+
+<h4>
+<a id="bežné-prihlásenie" class="anchor" href="#be%C5%BEn%C3%A9-prihl%C3%A1senie" aria-hidden="true"><span class="octicon octicon-link"></span></a>Bežné prihlásenie</h4>
+
+<p>Užívateľ zadá meno a heslo, v prípade správneho mena a hesla bude vyzvaní na zadanie otp vygenerovaného mobilnou aplikáciou. V prípade zhody môže pokračovať ďalej do systému.</p>
+
+<h4>
+<a id="pridaťzmeniť-zariadenie-na-generovanie-otp-kódov" class="anchor" href="#prida%C5%A5zmeni%C5%A5-zariadenie-na-generovanie-otp-k%C3%B3dov" aria-hidden="true"><span class="octicon octicon-link"></span></a>Pridať/zmeniť zariadenie na generovanie otp kódov</h4>
+
+<p>Užívateľ si môže stiahnuť aplikáciu na ďalšie zariadenie, ktoré bude musieť zase naskenovať QR kód. Pri ďalšom prihlasovaní sa môže použiť toto zariadenie. Problém – vyriešiť aby otp generované novým zariadením server registroval ako správne.</p>
+
+<h3>
+<a id="mobilná-aplikácia" class="anchor" href="#mobiln%C3%A1-aplik%C3%A1cia" aria-hidden="true"><span class="octicon octicon-link"></span></a>Mobilná aplikácia</h3>
+
+<p>Funkcionalita – z prvýkrát nasnímaného qr kódu má generovať otp, ktoré bude vedieť webserver rozpoznať ako správne otp. Generovanie má ideálne prebiehať v offline režime.</p>
+
+<h3>
+<a id="backend" class="anchor" href="#backend" aria-hidden="true"><span class="octicon octicon-link"></span></a>Backend</h3>
+
+<p>Backend na webe bude vykonávať rovnakú činnosť ako aplikácia na mobile , ale takto vygenerované otp sa použivateľovi nezobrazí ale len porovná s otp ,ktoré zadal používateľ.
+Generovanie otp z qr kódu bude prebiehať pomocou HOTP , TOTP alebo challenge response . </p>
+
+<h3>
+<a id="snímanie-qr-kódu-z-webu" class="anchor" href="#sn%C3%ADmanie-qr-k%C3%B3du-z-webu" aria-hidden="true"><span class="octicon octicon-link"></span></a>Snímanie QR kódu z webu</h3>
+
+<p>Samotným zosnímaním qr kódu sa uskutoční prenos tajomstva na základe ktorého sa bude potom pomocou HOTP, TOTP alebo challenge response generovať otp. Tajomstvo má byť zdieľané, teda pôjde o symetrické šifrovanie. Je potreba porovnať HOTP, TOTP a challenge response a zistiť ktorý spôsob je pre danú aplikáciu najvýhodnejší.</p>
+
+      <footer class="site-footer">
+        <span class="site-footer-owner"><a href="https://github.com/jurajmaslej/bakalarka">Bezpečné prihlasovanie pomocou mobilnej aplikácie</a> is maintained by <a href="https://github.com/jurajmaslej">jurajmaslej</a>.</span>
+
+        <span class="site-footer-credits">This page was generated by <a href="https://pages.github.com">GitHub Pages</a> using the <a href="https://github.com/jasonlong/cayman-theme">Cayman theme</a> by <a href="https://twitter.com/jasonlong">Jason Long</a>.</span>
+      </footer>
+
+    </section>
+
+  
+  </body>
+</html>
