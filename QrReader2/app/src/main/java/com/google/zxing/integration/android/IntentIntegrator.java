@@ -38,6 +38,9 @@ package com.google.zxing.integration.android;
         import android.net.Uri;
         import android.os.Bundle;
         import android.util.Log;
+        import android.view.KeyEvent;
+
+        import com.example.jurko.qrreader2.MainActivity;
 
 /**
  * <p>A utility class which helps ease integration with Barcode Scanner via {@link Intent}s. This is a simple
@@ -506,5 +509,6 @@ public class IntentIntegrator {
             }
         }
     }
+
 
 }

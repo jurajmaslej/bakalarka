@@ -4,4 +4,10 @@
     <string name="scan">Scan</string>
     <string name="tview1">text view 1</string>
     <string name="tview2">text view 2</string>
+    <string name="barcode">barcode</string>
+    <string name="second_activity">ShowPasswd</string>
+    <string name="intro">QrReader2</string>
+    <string name="textview1">textview1</string>
+    <string name="scanned">Already scanned</string>
+    <string name="getLongerPasswdBtn">Get longer password</string>
 </resources>
