@@ -10,4 +10,5 @@
     <string name="textview1">textview1</string>
     <string name="scanned">Already scanned</string>
     <string name="getLongerPasswdBtn">Get longer password</string>
+    <string name="getNewPasswd">New password</string>
 </resources>

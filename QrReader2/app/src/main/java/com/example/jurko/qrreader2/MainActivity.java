@@ -9,6 +9,7 @@ import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.text.format.Time;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.Menu;
@@ -19,6 +20,11 @@ import android.widget.Toast;
 
 import com.google.zxing.integration.android.IntentIntegrator;
 import com.google.zxing.integration.android.IntentResult;
+
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.TimeZone;
 
 public class MainActivity extends Activity implements View.OnClickListener {
 
@@ -127,18 +133,14 @@ public class MainActivity extends Activity implements View.OnClickListener {
 
     public String hash_QR_Time(String seed){
 
-
-        Time today = new Time(Time.TIMEZONE_UTC);
-
-        today.setToNow();
-        Toast.makeText(getApplicationContext(),  today.toString(), Toast.LENGTH_LONG).show();
         Hash hash = new Hash();
-        hashed = hash.get_SHA_512_SecurePassword(today.toString() , seed);
+        String time = hash.getTime(100000);
+        hashed = hash.get_SHA_512_SecurePassword(time.toString() , seed);
         //Toast.makeText(getApplicationContext(),  hashed, Toast.LENGTH_LONG).show();
         Intent intent = new Intent(this, Main2Activity.class);
         intent.putExtra(long_passwd , hashed);
         startActivity(intent);
-        return  hash.get_SHA_512_SecurePassword(today.toString() , seed);
+        return  hash.get_SHA_512_SecurePassword(time , seed);
     }
 
     @Override

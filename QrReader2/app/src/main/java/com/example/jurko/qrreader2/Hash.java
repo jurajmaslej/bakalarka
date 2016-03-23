@@ -1,9 +1,11 @@
 package com.example.jurko.qrreader2;
-import android.app.Activity;
+import android.util.Log;
 
 import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+
+import java.lang.Math;
 
 /**
  * Created by Jurko on 12. 2. 2016.
@@ -43,5 +45,17 @@ public class Hash {
             e.printStackTrace();
         }
         return generatedPassword;
+    }
+
+    public String getTime (int acc){
+        Long milis = System.currentTimeMillis();
+
+
+        double milisDoub = (double) milis /  acc;
+        Log.d("milis", "bf round > "+ milisDoub );
+        int milisInt =  (int) Math.round( milisDoub);
+        String time =  Integer.toString(milisInt);
+        Log.d("milis", time);
+        return time;
     }
 }
