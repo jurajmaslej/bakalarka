@@ -1,0 +1,21 @@
+<html>
+  <head>
+    {% if title %}
+    <title>{{ title }} - microblog</title>
+    {% else %}
+    <title>Welcome to microblog</title>
+    {% endif %}
+  </head>
+  <body>
+    {% extends "base.html" %}
+{% block content %}
+    <h1>Hi, {{ user.nickname }}!</h1>
+    {% for post in posts %}
+    <div><p>{{ post.author.nickname }} says: <b>{{ post.body }}</b></p></div>
+    
+    {% endfor %}
+    <p> {{user.id}} </p>
+    <img src="/static/" + {{user.id.toString()}} +  ".png" alt="qr code" style="width:304px;height:228px;">
+{% endblock %}
+  </body>
+</html>
