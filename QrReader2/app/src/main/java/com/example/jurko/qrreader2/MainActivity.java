@@ -21,6 +21,7 @@ import android.widget.Toast;
 import com.google.zxing.integration.android.IntentIntegrator;
 import com.google.zxing.integration.android.IntentResult;
 
+import java.io.Serializable;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -33,6 +34,8 @@ public class MainActivity extends Activity implements View.OnClickListener {
     private TextView formatTxt, contentTxt;
     private String hashed;
     public final static String long_passwd = "com.example.jurko.qrreader2.hashed";
+    public final static String qr = "savedQr";
+    public final static String mobileTime = "savedMtime";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -46,8 +49,6 @@ public class MainActivity extends Activity implements View.OnClickListener {
         //contentTxt = (TextView)findViewById(R.id.scan_content);
         scanned = (Button)findViewById(R.id.scanned);
 
-        //scanBtn.setBackgroundColor(3355444);
-        //scanned.setBackgroundColor(3355444);
         scanBtn.setOnClickListener(this);
         scanned.setOnClickListener(this);
 
@@ -87,28 +88,24 @@ public class MainActivity extends Activity implements View.OnClickListener {
         if(v.getId()==R.id.scan_button){ //scan
             IntentIntegrator scanIntegrator = new IntentIntegrator(this);
             scanIntegrator.initiateScan();
+            Log.d("cas", "current system time while scanning " + String.valueOf(this.roundSystemTime()));
         }
         if(v.getId()==R.id.scanned){
-            String qr = this.getSavedQr();
-            this.hash_QR_Time(qr);
+            String id = this.getSavedQr().substring(this.getSavedQr().lastIndexOf("#") + 1);
+            Log.d("cas", "current system time without rounding" + String.valueOf(System.currentTimeMillis()));
+            this.hash_QR_Time(id + Long.toString(this.countServerTime()).substring(0,8));
 
         }
     }
 
     public void onActivityResult(int requestCode, int resultCode, Intent intent) {
-//retrieve scan result
-        Toast.makeText(getApplicationContext(), (String) "je v activity result", Toast.LENGTH_SHORT).show();
+        //retrieve scan result
         IntentResult scanningResult = IntentIntegrator.parseActivityResult(requestCode, resultCode, intent);
-        if (scanningResult != null) {
-//we have a result
+        if (scanningResult.getContents() != null) {
+            //we have a result
             String scanContent = scanningResult.getContents();
-            String scanFormat = scanningResult.getFormatName();
             this.saveQr(scanContent);
-
-            //formatTxt.setText("FORMAT: " + scanFormat);
-            //contentTxt.setText("CONTENT: " + scanContent);
-
-            hash_QR_Time(scanContent);
+            this.saveMobileTime(this.roundSystemTime());
         } else {
             Toast toast = Toast.makeText(getApplicationContext(),
                     "No scan data received!", Toast.LENGTH_SHORT);
@@ -122,25 +119,60 @@ public class MainActivity extends Activity implements View.OnClickListener {
         return mString;
     }
 
+    private long getSavedMobileTime(){
+        SharedPreferences mPrefs = getSharedPreferences("label", 0);
+        long def = 0;
+        long mLong = mPrefs.getLong("mobileTime", def );
+        return mLong;
+    }
+
+    private void saveMobileTime(long mobileTime){
+        SharedPreferences mPrefs = getSharedPreferences("label", 0);
+        SharedPreferences.Editor mEditor = mPrefs.edit();
+        mEditor.putLong("mobileTime", mobileTime ).commit();
+    }
+
     private void saveQr(String scanContent){
         SharedPreferences mPrefs = getSharedPreferences("label", 0);
         SharedPreferences.Editor mEditor = mPrefs.edit();
         mEditor.putString("tagQr", scanContent).commit();
     }
 
+    private long countServerTime(){
+        long timePassed = this.roundSystemTime() - this.getSavedMobileTime(); //time passed from first scan
+        Log.d("cas", " time in time of scan "  + String.valueOf(this.getSavedMobileTime()));
+        Log.d("cas", "current system time "  +  String.valueOf(this.roundSystemTime()));
+        Log.d("cas", "current system time without rounding" + String.valueOf(System.currentTimeMillis()));
+        Log.d("cas", "timePassed " + String.valueOf(timePassed));
+        Log.d("cas", "timeOnServer " + String.valueOf(Long.valueOf(this.getSavedQr().substring(0, this.getSavedQr().lastIndexOf("#"))) + timePassed));
+        Log.d("cas", "data in QR code " + this.getSavedQr());
+        Long serverTime = Long.valueOf(this.getSavedQr().substring(0, this.getSavedQr().lastIndexOf("#"))) + timePassed; //time in QR code + timePassed
+        return serverTime;
+
+    }
+    public long roundSystemTime(){ // aby mal cas 10 cifier vsade, sekundova presnost, zaokruhli sa neskor
+        return System.currentTimeMillis() / 1000;
+    }
 
 
 
-    public String hash_QR_Time(String seed){
 
-        Hash hash = new Hash();
-        String time = hash.getTime(100000);
-        hashed = hash.get_SHA_512_SecurePassword(time.toString() , seed);
+    public String hash_QR_Time(String myTime){
+
+        Hash hash = new Hash(this.getSavedQr(), this.getSavedMobileTime());
+        Log.d("cas", "ide sa hesovat " + myTime);
+        hashed = hash.get_SHA_512_SecurePassword(myTime);
+        Log.d("cas", "hashed time" + hashed);
+        Log.d("cas", "byte array" + String.valueOf(hash.get_SHA_512_SecurePassword( myTime)));
         //Toast.makeText(getApplicationContext(),  hashed, Toast.LENGTH_LONG).show();
+        Hash newPasswd = new Hash(this.getSavedQr(), this.getSavedMobileTime());
         Intent intent = new Intent(this, Main2Activity.class);
         intent.putExtra(long_passwd , hashed);
+        intent.putExtra(qr, this.getSavedQr());
+        intent.putExtra(mobileTime, this.getSavedMobileTime());
+
         startActivity(intent);
-        return  hash.get_SHA_512_SecurePassword(time , seed);
+        return  hashed;
     }
 
     @Override

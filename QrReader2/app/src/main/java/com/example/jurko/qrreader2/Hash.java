@@ -1,7 +1,4 @@
 package com.example.jurko.qrreader2;
-import android.util.Log;
-
-import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
@@ -11,28 +8,27 @@ import java.lang.Math;
  * Created by Jurko on 12. 2. 2016.
  */
 public class Hash {
+    String Qr;
+    Long savedMobileTime;
 
 
-    public Hash( ){
+
+    public Hash(String qr, Long savedMtime ){
+        this.Qr = qr;
+        this.savedMobileTime = savedMtime;
 
     }
-    public String get_SHA_512_SecurePassword(String passwordToHash, String   salt)
+    public String get_SHA_512_SecurePassword(String passwordToHash)
     {
         String generatedPassword = null;
         try {
 
             MessageDigest md = MessageDigest.getInstance("SHA-512");
-            try {
-                md.update(salt.getBytes("UTF-8"));
-            } catch (UnsupportedEncodingException e) {
-                e.printStackTrace();
-            }
+
             byte[] bytes = new byte[0];
-            try {
-                bytes = md.digest(passwordToHash.getBytes("UTF-8"));
-            } catch (UnsupportedEncodingException e) {
-                e.printStackTrace();
-            }
+
+                bytes = md.digest(passwordToHash.getBytes(java.nio.charset.Charset.forName("UTF-8")));
+
             StringBuilder sb = new StringBuilder();
             for(int i=0; i< bytes.length ;i++)
             {
@@ -47,6 +43,9 @@ public class Hash {
         return generatedPassword;
     }
 
+
+
+    /*
     public String getTime (int acc){
         Long milis = System.currentTimeMillis();
 
@@ -58,4 +57,11 @@ public class Hash {
         Log.d("milis", time);
         return time;
     }
+    */
+
+    public long roundSystemTime(){ // aby mal cas 10 cifier vsade, sekundova presnost, zaokruhli sa neskor
+        return System.currentTimeMillis() / 1000;
+    }
+
+
 }

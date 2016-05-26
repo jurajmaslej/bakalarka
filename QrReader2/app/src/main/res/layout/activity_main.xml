@@ -10,29 +10,37 @@
         android:layout_width="match_parent" android:layout_height="?attr/actionBarSize"
         android:background="?attr/colorPrimary" app:popupTheme="@style/AppTheme.PopupOverlay" />
 
-    <Button android:id="@+id/scan_button"
-        android:layout_width="fill_parent"
+    <TextView
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_centerHorizontal="true"
-        android:text="@string/scan"
+
+        android:text="As new user press Scan button for new password."
+        android:textSize="20dp"
+        android:background="@drawable/textviewshape"
+        android:id="@+id/textView"
         android:layout_below="@+id/toolbar"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true"
-        android:textColor="#000000"
-        android:background="@drawable/button"
-        android:shadowColor="#A8A8A8"
-        android:shadowDx="0"
-        android:shadowDy="0"
-        android:shadowRadius="5"
         android:layout_margin="5dp"
+        />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@drawable/textviewshape"
+        android:text="To generate new one time password press Already scanned."
+        android:textSize="20dp"
+        android:id="@+id/textView2"
+        android:layout_below="@id/textView"
+        android:layout_marginBottom="5dp"
+        android:layout_marginLeft="5dp"
+        android:layout_marginRight="5dp"
         />
 
     <Button android:id="@+id/scanned"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:layout_centerHorizontal="true"
-        android:layout_below="@+id/scan_button"
         android:text="@string/scanned"
+        android:textSize="20dp"
         android:textColor="#000000"
         android:background="@drawable/button"
         android:shadowColor="#A8A8A8"
@@ -42,14 +50,34 @@
         android:layout_marginBottom="5dp"
         android:layout_marginLeft="5dp"
         android:layout_marginRight="5dp"
+        android:layout_alignParentBottom="true"
+        />
+
+
+
+    <Button android:id="@+id/scan_button"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:text="@string/scan"
+        android:textSize="20dp"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true"
+        android:textColor="#000000"
+        android:background="@drawable/button"
+        android:shadowColor="#A8A8A8"
+        android:shadowDx="0"
+        android:shadowDy="0"
+        android:shadowRadius="5"
+        android:layout_margin="5dp"
+        android:layout_above="@id/scanned"
         />
 
 
 
     <android.support.design.widget.AppBarLayout android:layout_height="wrap_content"
-        android:layout_width="match_parent" android:theme="@style/AppTheme.AppBarOverlay">
-
-
+        android:layout_width="match_parent" android:theme="@style/AppTheme.AppBarOverlay"
+        android:id="@+id/appBar">
 
     </android.support.design.widget.AppBarLayout>
 
