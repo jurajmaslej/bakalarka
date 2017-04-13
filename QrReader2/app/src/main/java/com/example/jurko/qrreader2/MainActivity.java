@@ -11,10 +11,13 @@ import android.support.v7.widget.Toolbar;
 import android.text.format.Time;
 import android.util.Log;
 import android.view.KeyEvent;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.PopupWindow;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -33,9 +36,12 @@ public class MainActivity extends Activity implements View.OnClickListener {
     private Button scanned;
     private TextView formatTxt, contentTxt;
     private String hashed;
+    /*private PopupWindow popUpControl;
+    private LayoutInflater layoutInf;*/
     public final static String long_passwd = "com.example.jurko.qrreader2.hashed";
     public final static String qr = "savedQr";
     public final static String mobileTime = "savedMtime";
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -86,6 +92,11 @@ public class MainActivity extends Activity implements View.OnClickListener {
     @Override
     public void onClick(View v) {
         if(v.getId()==R.id.scan_button){ //scan
+
+            /*layoutInf = (LayoutInflater) getApplicationContext().getSystemService(LAYOUT_INFLATER_SERVICE);
+            ViewGroup container = (ViewGroup) layoutInf.inflate(R.layout.popupcontrol, null);
+            popUpControl = new PopupWindow(container, 300,300, true);*/
+
             IntentIntegrator scanIntegrator = new IntentIntegrator(this);
             scanIntegrator.initiateScan();
             Log.d("cas", "current system time while scanning " + String.valueOf(this.roundSystemTime()));

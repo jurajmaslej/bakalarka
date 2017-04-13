@@ -1,0 +1,33 @@
+<html>
+  <head>
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+    {% if title %}
+    <title>{{ title }} - microblog</title>
+    {% else %}
+    <title>microblog</title>
+    {% endif %}
+  </head>
+  <body>
+
+    
+    <div>Secure login page:
+        <a href="{{ url_for('index') }}">Home</a>
+        {% if current_user.is_authenticated %}
+        | <a href="{{ url_for('user.edit_view', nickname=current_user.nickname) }}">User</a>
+        | <a href="{{ url_for('admin.logout_view') }}">Logout</a>
+        {% endif %}
+    </div>
+    <hr>
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+    <ul>
+    {% for message in messages %}
+        <li>{{ message }} </li>
+    {% endfor %}
+    </ul>
+    {% endif %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+  </body>
+</html>
