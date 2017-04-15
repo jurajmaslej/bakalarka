@@ -131,6 +131,7 @@ class MyModelView(sqla.ModelView):
 
 # Create customized index view class that handles login & registration
 class MyAdminIndexView(admin.AdminIndexView):
+    can_create = False
 
     @expose('/')
     def index(self):

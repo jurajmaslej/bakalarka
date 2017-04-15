@@ -1,0 +1,52 @@
+{% extends 'my_master.html' %}
+{% block body %}
+{{ super() }}
+<div class="container">
+
+    <div class="row">
+        <div class="col-sm-10 col-sm-offset-1">
+
+            {% if not current_user.is_authenticated %}
+                <p>You can register as a regular user, or log in as a superuser with the following credentials:
+                <ul>
+                    <li>email: <b>admin</b></li>
+                    <li>password: <b>admin</b></li>
+                </ul>
+                <p>
+                    <a class="btn btn-success" href="{{ url_for('security.login') }}">login</a> <a class="btn btn-success" href="{{ url_for('security.register') }}">register</a>
+                </p>
+            {% endif %}
+
+
+
+            <!-- new   --->
+            <div>
+                {% if current_user.is_authenticated %}
+                <h1>Secure login</h1>
+                <p class="lead">
+                    Authentication
+                </p>
+                <p>
+                   If it is your first login, choose "scan" option.
+                    <br>
+                    Otherwise, choose "already scanned" option.
+                </p>
+
+
+                {% endif %}
+
+            </div>
+        {% if current_user.is_authenticated %}
+        <a class="btn btn-success" style="padding-rigt: 10px" href="/newScan{{current_user.id}}"> scan</a>
+        <a class="btn btn-success" href="/scanned{{current_user.id}}"> already scanned</a>
+        {% endif %}
+        <br>
+        <p style="padding-top: 10px">
+            <a class="btn btn-success" style="border:  solid black;  border-radius: 5px; " href="/"><i class="glyphicon glyphicon-chevron-left"></i> Back</a>
+        </p>
+        <!-- end new --->
+
+        </div>
+    </div>
+</div>
+{% endblock body %}
