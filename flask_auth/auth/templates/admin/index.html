@@ -37,7 +37,9 @@
 
             </div>
         {% if current_user.is_authenticated %}
-        <a class="btn btn-success" style="padding-rigt: 10px" href="/newScan{{current_user.id}}"> scan</a>
+            {% if not current_user.has_scanned %}
+                <a class="btn btn-success" style="padding-rigt: 10px" href="/newScan{{current_user.id}}"> scan</a>
+            {% endif %}
         <a class="btn btn-success" href="/scanned{{current_user.id}}"> already scanned</a>
         {% endif %}
         <br>

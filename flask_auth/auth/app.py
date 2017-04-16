@@ -45,6 +45,7 @@ class User(db.Model, UserMixin):
     password = db.Column(db.String(255))
     active = db.Column(db.Boolean())
     confirmed_at = db.Column(db.DateTime())
+    has_scanned = db.Column(db.Boolean())
     roles = db.relationship('Role', secondary=roles_users,
                             backref=db.backref('users', lazy='dynamic'))
 
@@ -117,13 +118,17 @@ def scan(id):
 
 @app.route('/scanned<id>',  methods=['GET', 'POST'])
 def scanned(id):
-    print("ahojj")
+    print("ahojj, ", current_user.has_scanned)
     form = OneTimeLoginForm(request.form)
-    print(time.time())
+    #print(time.time())
+    #print(current_user)
+    user_data = user_datastore.find_user(email=str(current_user))
     if request.method == "POST" and form.validate():
         print("presiel submitom")
         if form.validate_otp(id) == True:
-            print("prihlasil si sa")
+            user_data.has_scanned = True
+            user_datastore.commit()
+            print("prihlasil si sa, has_scanned sa zmenilo " , current_user.has_scanned)
             return render_template('index.html', form=form)
     else:
         print("nepresiel submitom")
@@ -178,7 +183,8 @@ def build_sample_db():
             first_name='Admin',
             email='admin',
             password=encrypt_password('admin'),
-            roles=[user_role, super_user_role]
+            roles=[user_role, super_user_role],
+            has_scanned=False
         )
 
         first_names = [
@@ -200,7 +206,8 @@ def build_sample_db():
                 last_name=last_names[i],
                 email=tmp_email,
                 password=encrypt_password(tmp_pass),
-                roles=[user_role, ]
+                roles=[user_role, ],
+                has_scanned=False
             )
         db.session.commit()
     return
@@ -242,5 +249,5 @@ if __name__ == '__main__':
         build_sample_db()
 
     # Start app
-    app.config['TEMPLATES_AUTO_RELOAD']= True
+    app.config['TEMPLATES_AUTO_RELOAD'] = True
     app.run(debug=True)
