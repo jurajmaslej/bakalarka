@@ -106,13 +106,29 @@ class MyModelView(sqla.ModelView):
 # Flask views
 @app.route('/')
 def index():
+    print('############')
+    print('index route')
+    print('############')
+    form = OneTimeLoginForm(request.form)
     return render_template('index.html', form=form)
+
+@app.route('/admin/')
+def admin():
+    print('############')
+    print('admin route')
+    print('############')
+    form = OneTimeLoginForm(request.form)
+    return render_template('admin/index.html', form=form,
+                           admin_view=admin.index_view,
+                           get_url=url_for,
+                           h=admin_helpers)
 
 @app.route('/newScan<id>')
 def scan(id):
     print("ahoj")
     image = makeQr(login.current_user.id)
-    image.save("static/qr" + id + ".png", "PNG")
+    print(os.path.dirname(os.path.realpath(__file__)))
+    image.save(os.path.dirname(os.path.realpath(__file__)) + "/static/qr" + id + ".png", "PNG")
     return render_template('user.html', form=form)
 
 

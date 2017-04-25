@@ -4,13 +4,16 @@ todo list
 + looks like solved
 * solved for sure
 
-- design in new scanning and already scanned
-- admininterface - only admin can create new user
+... design in new scanning and already scanned
++ admininterface - only admin can create new user
 - better design in MA
 + in Ma- now cannot click "new scann" - probably disabled after one click
 --- did new build app in Astudio, works fine
 - all cases testing
 -- new functions? testing with selenium? -- get automatized mobile - wont break Jari's copyright?
 - finally get on some server
-- change color layout in WA to something dark
+... change color layout in WA to something dark
 - spelling in text, - rewrite something
+
+- register form with first name , last name
+
