@@ -42,48 +42,48 @@
             {% else %}
                 <p>Code scanned, you can add new device.</p>
                 <a class="btn btn-success" href="/newScan{{current_user.id}}"> scan on new device</a>
+                <button type="button" class="btn btn-success btn-lg" data-toggle="modal" data-target="#myModal">Open Modal</button>
+
+                <!-- Modal -->
+                <div id="myModal" class="modal fade" role="dialog">
+                  <div class="modal-dialog">
+
+                    <!-- Modal content-->
+                    <div class="modal-content">
+
+                        <div class="w3-container" style="border: thin solid black; background-color:#66ba5b; ">
+                            <div class="modal-header">
+
+                                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                                <h3>Please validate with otp</h3>
+                            </div>
+                          <div class="modal-body">
+
+                                  <form action="/newScan{{current_user.id}}" method="post" name="oneTimeLogin">
+
+                                      <p class="w3-container w3-teal" >
+                                          Please enter your OTP:<br>
+                                          <p style="color: black;">
+                                          {{ form.enterPasswd() }}
+                                          <p>
+                                      <br>
+                                      </p>
+                                      <input class="w3-btn  w3-hover-green" type="submit" value="Sign In">
+                                      <button type="button" class="w3-btn  w3-hover-green pull-right" data-dismiss="modal">Close</button>
+                                  </form>
+                            </div>
+                              <div class="modal-footer">
+                              </div>
+                            </div>
+                    </div>
+                  </div>
+                </div>
             {% endif %}
         <a class="btn btn-success" href="/scanned{{current_user.id}}"> already scanned</a>
         {% endif %}
         <br>
 
-            <button type="button" class="btn btn-success btn-lg" data-toggle="modal" data-target="#myModal">Open Modal</button>
 
-            <!-- Modal -->
-            <div id="myModal" class="modal fade" role="dialog">
-              <div class="modal-dialog">
-
-                <!-- Modal content-->
-                <div class="modal-content">
-
-                    <div class="w3-container" style="border: thin solid black; background-color:#66ba5b; ">
-                        <div class="modal-header">
-
-                            <button type="button" class="close" data-dismiss="modal">&times;</button>
-                            <h3>Please validate with otp</h3>
-                        </div>
-                      <div class="modal-body">
-
-                              <form action="" method="post" name="oneTimeLogin">
-
-                                  <p class="w3-container w3-teal" >
-                                      Please enter your OTP:<br>
-                                      <p style="color: black;">
-                                      {{ form.enterPasswd() }}
-                                      <p>
-                                  <br>
-                                  </p>
-
-                                  <input class="w3-btn  w3-hover-green" type="submit"  type="submit"  value="Sign In">
-                                  <button type="button" class="w3-btn  w3-hover-green pull-right" data-dismiss="modal">Close</button>
-                              </form>
-                        </div>
-                          <div class="modal-footer">
-                          </div>
-                        </div>
-                </div>
-              </div>
-            </div>
         <p style="padding-top: 10px">
             <a class="btn btn-success" style="border:  solid black;  border-radius: 5px; " href="/"><i class="glyphicon glyphicon-chevron-left"></i> Back</a>
         </p>

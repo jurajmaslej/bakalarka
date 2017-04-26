@@ -58,9 +58,10 @@ class OneTimeLoginForm(form.Form):
     def generate_passwd(self, id):
         timeStamp = time.time()
         timeStamp = str(timeStamp)
-        print(timeStamp)
+        #print(timeStamp)
         timeStamp = timeStamp[:8]
-        print (timeStamp)
+        #print (timeStamp)
+        #print(id)
         print("ide sa hesovat " + timeStamp + " # " + id)
         passwd = hashlib.sha512((id + timeStamp).encode('utf-8')).hexdigest()
         print("heslo " + passwd[:8])
@@ -112,18 +113,29 @@ def index():
     form = OneTimeLoginForm(request.form)
     return render_template('index.html', form=form)
 
-@app.route('/admin/')
+@app.route('/admin/', methods=['GET', 'POST'])
 def admin():
     print('############')
     print('admin route')
     print('############')
     form = OneTimeLoginForm(request.form)
+    user_data = user_datastore.find_user(email=str(current_user))
+    if request.method == "POST" and form.validate():
+        print("presiel submitom")
+        print("##### user data id ", user_data.id)
+        if form.validate_otp(str(user_data.id)) == True:
+            user_data.has_scanned = True
+            user_datastore.commit()
+            print("prihlasil si sa, has_scanned sa zmenilo ", current_user.has_scanned)
+            return render_template('index.html', form=form)
+    else:
+        print("nepresiel submitom")
     return render_template('admin/index.html', form=form,
                            admin_view=admin.index_view,
                            get_url=url_for,
                            h=admin_helpers)
 
-@app.route('/newScan<id>')
+@app.route('/newScan<id>', methods=[ 'POST'])
 def scan(id):
     print("ahoj")
     image = makeQr(login.current_user.id)
@@ -144,7 +156,7 @@ def scanned(id):
         if form.validate_otp(id) == True:
             user_data.has_scanned = True
             user_datastore.commit()
-            print("prihlasil si sa, has_scanned sa zmenilo " , current_user.has_scanned)
+            print("prihlasil si sa, has_scanned sa zmenilo ", current_user.has_scanned)
             return render_template('index.html', form=form)
     else:
         print("nepresiel submitom")
