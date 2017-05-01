@@ -12,7 +12,7 @@ from flask_security.utils import encrypt_password
 import flask_admin
 from flask_admin.contrib import sqla
 from flask_admin import helpers as admin_helpers
-
+from flask_security.forms import RegisterForm
 
 # Create Flask application
 app = Flask(__name__)
@@ -75,9 +75,14 @@ class OneTimeLoginForm(form.Form):
             return True
         return False
 
+
+class ExtendedRegisterForm(RegisterForm):
+    first_name = fields.TextField('First Name', validators=[validators.required()])
+    last_name = fields.TextField('Last Name', validators=[validators.required()])
+
 # Setup Flask-Security
 user_datastore = SQLAlchemyUserDatastore(db, User, Role)
-security = Security(app, user_datastore)
+security = Security(app, user_datastore, register_form=ExtendedRegisterForm)
 
 
 # Create customized model view class
@@ -135,9 +140,26 @@ def admin():
                            get_url=url_for,
                            h=admin_helpers)
 
-@app.route('/newScan<id>', methods=[ 'POST'])
+@app.route('/newScan<id>', methods=[ 'GET','POST'])
 def scan(id):
-    print("ahoj")
+    print('############')
+    print('new scan route')
+    print('############')
+
+    form = OneTimeLoginForm(request.form)
+    # print(time.time())
+    # print(current_user)
+    user_data = user_datastore.find_user(email=str(current_user))
+    if request.method == "POST" and form.validate():
+        print("presiel submitom")
+        if form.validate_otp(id) == True:
+            user_data.has_scanned = True
+            user_datastore.commit()
+            print("prihlasil si sa, has_scanned sa zmenilo ", current_user.has_scanned)
+            return render_template('index.html', form=form)
+    else:
+        print("nepresiel submitom")
+
     image = makeQr(login.current_user.id)
     print(os.path.dirname(os.path.realpath(__file__)))
     image.save(os.path.dirname(os.path.realpath(__file__)) + "/static/qr" + id + ".png", "PNG")
@@ -146,7 +168,9 @@ def scan(id):
 
 @app.route('/scanned<id>',  methods=['GET', 'POST'])
 def scanned(id):
-    print("ahojj, ", current_user.has_scanned)
+    print('############')
+    print('already scanned')
+    print('############')
     form = OneTimeLoginForm(request.form)
     #print(time.time())
     #print(current_user)

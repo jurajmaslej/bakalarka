@@ -52,7 +52,9 @@
           <a class="navbar-brand" href="{{ admin_view.admin.url }}">
             {% if not current_user.is_authenticated %}  <p>Please log in</p>
             {% else %}
-              <p>{{ current_user }}</p>
+              <div style="color: #69f95c;">
+                <p>{{ current_user.first_name }} {{ current_user.last_name }}</p>
+              </div>
             {% endif %}</a>
           {% endblock %}
         </div>

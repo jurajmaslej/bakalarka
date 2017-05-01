@@ -38,11 +38,12 @@
             </div>
         {% if current_user.is_authenticated %}
             {% if not current_user.has_scanned %}
-                <a class="btn btn-success" style="padding-rigt: 10px" href="/newScan{{current_user.id}}"> scan</a>
+                <a class="btn btn-success btn-lg" style="padding-rigt: 10px" href="/newScan{{current_user.id}}"> scan</a>
             {% else %}
-                <p>Code scanned, you can add new device.</p>
-                <a class="btn btn-success" href="/newScan{{current_user.id}}"> scan on new device</a>
-                <button type="button" class="btn btn-success btn-lg" data-toggle="modal" data-target="#myModal">Open Modal</button>
+                <p>Code scanned, you can add a new device. <br>
+                   To do that, you will have to validate with otp from already functional device first.</p>
+
+                <button type="button" class="btn btn-success btn-lg" data-toggle="modal" data-target="#myModal">Scan on new device</button>
 
                 <!-- Modal -->
                 <div id="myModal" class="modal fade" role="dialog">
@@ -68,8 +69,8 @@
                                           <p>
                                       <br>
                                       </p>
-                                      <input class="w3-btn  w3-hover-green" type="submit" value="Sign In">
-                                      <button type="button" class="w3-btn  w3-hover-green pull-right" data-dismiss="modal">Close</button>
+                                      <input class="btn btn-success  w3-hover-green" style="background-color:#66ba5b;" type="submit" value="Sign In">
+                                      <button type="button" class="btn btn-success  w3-hover-green pull-right" data-dismiss="modal">Close</button>
                                   </form>
                             </div>
                               <div class="modal-footer">
@@ -79,13 +80,13 @@
                   </div>
                 </div>
             {% endif %}
-        <a class="btn btn-success" href="/scanned{{current_user.id}}"> already scanned</a>
+        <a class="btn btn-success btn-lg" href="/scanned{{current_user.id}}"> Already scanned</a>
         {% endif %}
         <br>
 
 
         <p style="padding-top: 10px">
-            <a class="btn btn-success" style="border:  solid black;  border-radius: 5px; " href="/"><i class="glyphicon glyphicon-chevron-left"></i> Back</a>
+            <a class="btn btn-success btn-lg" style="border:  solid thin black;  border-radius: 5px; " href="/"><i class="glyphicon glyphicon-chevron-left"></i> Back</a>
         </p>
         <!-- end new --->
 

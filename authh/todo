@@ -17,3 +17,7 @@ todo list
 
 - register form with first name , last name
 
+
+
+---possible bug - app does not want to generate new password - gives old one when scanning for new user without closing app
+
