@@ -13,6 +13,7 @@ import flask_admin
 from flask_admin.contrib import sqla
 from flask_admin import helpers as admin_helpers
 from flask_security.forms import RegisterForm
+from flask import make_response
 
 # Create Flask application
 app = Flask(__name__)
@@ -157,6 +158,11 @@ def scan(id):
             user_datastore.commit()
             print("prihlasil si sa, has_scanned sa zmenilo ", current_user.has_scanned)
             return render_template('index.html', form=form)
+        else:
+            return render_template('admin/index.html', form=form,
+                                   admin_view=admin.index_view,
+                                   get_url=url_for,
+                                   h=admin_helpers)
     else:
         print("nepresiel submitom")
 
@@ -187,6 +193,20 @@ def scanned(id):
     return render_template('userScanned.html',
                            title='Sign In',
                            form=form)
+
+
+@app.route('/makeCookie<id>', methods=['GET', 'POST'])
+def makeCookie(id):
+    print('############')
+    print('makeCookie')
+    print('############')
+    form = OneTimeLoginForm(request.form)
+    user_data = user_datastore.find_user(email=str(current_user))
+    if request.method == "POST" and form.validate():
+
+        resp = make_response(render_template('index.html', form=form))
+        resp.set_cookie(str(current_user), user_data.last_name, httponly=False)
+        return resp
 
 # Create admin
 admin = flask_admin.Admin(

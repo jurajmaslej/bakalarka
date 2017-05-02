@@ -38,12 +38,18 @@
             </div>
         {% if current_user.is_authenticated %}
             {% if not current_user.has_scanned %}
-                <a class="btn btn-success btn-lg" style="padding-rigt: 10px" href="/newScan{{current_user.id}}"> scan</a>
+                <a class="btn btn-success btn-lg"
+                   data-toggle="tooltip" data-placement="top"
+                   title="Use after first login, scan code with your device"
+                   style="padding-rigt: 10px" href="/newScan{{current_user.id}}"> scan</a>
             {% else %}
                 <p>Code scanned, you can add a new device. <br>
                    To do that, you will have to validate with otp from already functional device first.</p>
 
-                <button type="button" class="btn btn-success btn-lg" data-toggle="modal" data-target="#myModal">Scan on new device</button>
+                <a data-toggle="tooltip" data-placement="top" title="New device will be able to generate otp">
+                    <button type="button" class="btn btn-success btn-lg"
+                            data-toggle="modal" data-target="#myModal">Scan on new device</button>
+                </a>
 
                 <!-- Modal -->
                 <div id="myModal" class="modal fade" role="dialog">
@@ -80,7 +86,10 @@
                   </div>
                 </div>
             {% endif %}
-        <a class="btn btn-success btn-lg" href="/scanned{{current_user.id}}"> Already scanned</a>
+        <a class="btn btn-success btn-lg"
+           data-toggle="tooltip" data-placement="top"
+           title="Login with password from device"
+           href="/scanned{{current_user.id}}"> Already scanned</a>
         {% endif %}
         <br>
 
