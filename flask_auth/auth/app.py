@@ -2,18 +2,27 @@ import os
 import time
 import qrcode
 import hashlib
-from flask import Flask, url_for, redirect, render_template, request, abort
+from flask import Flask, url_for, redirect, render_template, request, abort, flash
 from flask_sqlalchemy import SQLAlchemy
 from flask_security import Security, SQLAlchemyUserDatastore, \
     UserMixin, RoleMixin, login_required, current_user
 from wtforms import form, fields, validators
-from flask.ext import admin, login
+from flask.ext import admin, login, mail
 from flask_security.utils import encrypt_password
 import flask_admin
 from flask_admin.contrib import sqla
 from flask_admin import helpers as admin_helpers
 from flask_security.forms import RegisterForm
 from flask import make_response
+
+from email.mime.text import MIMEText
+from email.MIMEMultipart import MIMEMultipart
+from email.MIMEText import MIMEText
+import smtplib
+from smtplib import SMTPException
+
+import random
+import string
 
 # Create Flask application
 app = Flask(__name__)
@@ -77,6 +86,10 @@ class OneTimeLoginForm(form.Form):
         return False
 
 
+class ForgottenPasswd(form.Form):
+    email = fields.TextField('Email', validators=[validators.required()])
+
+
 class ExtendedRegisterForm(RegisterForm):
     first_name = fields.TextField('First Name', validators=[validators.required()])
     last_name = fields.TextField('Last Name', validators=[validators.required()])
@@ -117,7 +130,8 @@ def index():
     print('index route')
     print('############')
     form = OneTimeLoginForm(request.form)
-    return render_template('index.html', form=form)
+    return redirect(url_for('security.login', next=request.url, form=form))
+    #return render_template('admin.html', form=form)
 
 @app.route('/admin/', methods=['GET', 'POST'])
 def admin():
@@ -203,10 +217,42 @@ def makeCookie(id):
     form = OneTimeLoginForm(request.form)
     user_data = user_datastore.find_user(email=str(current_user))
     if request.method == "POST" and form.validate():
+        if form.validate_otp(id) == True:
+            user_data.has_scanned = True
+            user_datastore.commit()
+            resp = make_response(render_template('index.html', form=form))
+            resp.set_cookie(str(current_user), user_data.last_name, httponly=False)
+            return resp
+    else:
+        print("nepresiel submitom")
+    return render_template('userScanned.html',
+                           title='Sign In',
+                           form=form)
 
-        resp = make_response(render_template('index.html', form=form))
-        resp.set_cookie(str(current_user), user_data.last_name, httponly=False)
-        return resp
+@app.route('/newPassword', methods=['GET', 'POST'])
+def newPassword():
+    print('############')
+    print('newPassword')
+    print('############')
+    form = ForgottenPasswd(request.form)
+    user_data = user_datastore.find_user(email=str(form.email.data))
+    if request.method == "POST":
+        if user_data is None:
+            print('############')
+            print("zly mail")
+            print('############')
+            flash('Password was not changed, we do not recognize given email.', 'error')
+            return redirect(url_for('security.login', next=request.url, form=form))
+        else:
+            print('############')
+            print("password ", user_data.password)
+            tmp_pass = ''.join(random.choice(string.ascii_lowercase + string.digits) for i in range(6))
+            user_data.password = encrypt_password(tmp_pass)
+            user_datastore.commit()
+            sendsmtp(form.email.data, tmp_pass)
+            user_data.changed_passwd = True
+    flash('Password successfully changed, check your email for new passwords.', 'success')
+    return redirect(url_for('security.login', next=request.url, form=form))
 
 # Create admin
 admin = flask_admin.Admin(
@@ -256,7 +302,8 @@ def build_sample_db():
             email='admin',
             password=encrypt_password('admin'),
             roles=[user_role, super_user_role],
-            has_scanned=False
+            has_scanned=False,
+            changed_passwd=False
         )
 
         first_names = [
@@ -279,11 +326,38 @@ def build_sample_db():
                 email=tmp_email,
                 password=encrypt_password(tmp_pass),
                 roles=[user_role, ],
-                has_scanned=False
+                has_scanned=False,
+                changed_passwd=False
             )
         db.session.commit()
     return
 
+
+def sendsmtp(mail, new_passwd):
+    msg = MIMEMultipart()
+    email_text = "Dear user, your password was changed to " + new_passwd
+
+    sender = 'juraj.maslej@gmail.com'
+    recipient = mail
+    passwd = 'xb7mj7ar'
+    msg.attach(MIMEText(email_text))
+    msg['From'] = 'juraj.maslej@gmail.com'
+    msg['Subject'] = 'Request for new password'
+    msg['To'] = mail
+    try:
+        server_ssl = smtplib.SMTP('smtp.gmail.com', 587)
+        server_ssl.ehlo()
+        server_ssl.starttls()
+        server_ssl.login(sender, passwd)
+    except SMTPException:
+        print ("failed to login into the email")
+        server_ssl.close()
+    try:
+        server_ssl.sendmail(sender, recipient, msg.as_string())
+        server_ssl.close()
+        print("successfully sent email to " + recipient)
+    except:
+        print("failed to sent email from " + sender + " to " + recipient)
 
 def makeQr(user_id):
         qr = qrcode.QRCode(

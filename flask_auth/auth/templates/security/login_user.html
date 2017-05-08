@@ -13,9 +13,48 @@
                 {{ render_field_with_errors(login_user_form.password) }}
                 {{ render_checkbox_field(login_user_form.remember) }}
                 {{ render_field(login_user_form.next) }}
-                {{ render_field(login_user_form.submit, class="btn btn-primary") }}
+                {{ render_field(login_user_form.submit, class="btn btn-success") }}
             </form>
             <p>Not yet signed up? Please <a href="{{ url_for('security.register') }}">register for an account</a>.</p>
+            <button type="button" class="btn btn-success btn"
+                            data-toggle="modal" data-target="#myModal">Forgot your password?</button>
+
+            
+            <!-- Modal -->
+                <div id="myModal" class="modal fade" role="dialog">
+                  <div class="modal-dialog">
+
+                    <!-- Modal content-->
+                    <div class="modal-content">
+
+                        <div class="w3-container" style="border: thin solid black; background-color:#66ba5b; ">
+                            <div class="modal-header">
+
+                                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                                <h3>Please validate with otp</h3>
+                            </div>
+                          <div class="modal-body">
+
+                                  <form action="/newPassword" method="post" name="email">
+
+                                      <p class="w3-container w3-teal" >
+                                          Please enter your OTP:<br>
+                                          <p style="color: black;">
+                                          {{ render_field_with_errors(login_user_form.email) }}
+                                          <p>
+                                      <br>
+                                      </p>
+                                      <input class="btn btn-success  w3-hover-green" style="background-color:#66ba5b;" type="submit" value="Request new password">
+                                      <button type="button" class="btn btn-success  w3-hover-green pull-right" data-dismiss="modal">Close</button>
+                                  </form>
+                            </div>
+                              <div class="modal-footer">
+                              </div>
+                            </div>
+                    </div>
+                  </div>
+                </div>
+
         </div>
     </div>
 </div>
