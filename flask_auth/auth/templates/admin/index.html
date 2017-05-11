@@ -1,6 +1,8 @@
 {% extends 'my_master.html' %}
+{% block title %} Homepage {% endblock %}
 {% block body %}
 {{ super() }}
+
 <div class="container">
 
     <div class="row">
@@ -16,8 +18,6 @@
                     <a class="btn btn-success" href="{{ url_for('security.login') }}">login</a> <a class="btn btn-success" href="{{ url_for('security.register') }}">register</a>
                 </p>
             {% endif %}
-
-
 
             <!-- new   --->
             <div>
@@ -90,10 +90,63 @@
            data-toggle="tooltip" data-placement="top"
            title="Login with password from device"
            href="/scanned{{current_user.id}}"> Already scanned</a>
+            <br>
+            {% if not current_user.forgotten_otp %}
+            <a class="btn btn-success btn-lg"
+               style="margin-top: 10px; padding-rigt: 10px"
+               data-toggle="tooltip"
+               data-placement="top"
+               title="Highly advised to create, used to validate user in case of fault otp's being generated"
+               href="/newOtp{{current_user.id}}"> Create back-up otp</a>
+
+            {% else %}
+
+            <a class="btn btn-success btn-lg"
+               style="margin-top: 10px; padding-rigt: 10px"
+               data-toggle="modal"
+               data-placement="top"
+               title="Use only if you are not able to log in with any otp from any device"
+               data-target="#otpModal"
+               > Request new scan</a>
+
+                <!-- Modal2 -->
+                <div id="otpModal" class="modal fade" role="dialog">
+                  <div class="modal-dialog">
+
+                    <!-- Modal content-->
+                    <div class="modal-content">
+
+                        <div class="w3-container" style="border: thin solid black; background-color:#66ba5b; ">
+                            <div class="modal-header">
+
+                                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                                <h3>Please validate with back-up password</h3>
+                            </div>
+                          <div class="modal-body">
+
+                                  <form action="/newOtp{{current_user.id}}" method="post" name="oneTimeLogin">
+
+                                      <p class="w3-container w3-teal" >
+                                          Please enter your OTP:<br>
+                                          <p style="color: black;">
+                                          {{ form.enterPasswd() }}
+                                          <p>
+                                      <br>
+                                      </p>
+                                      <input class="btn btn-success  w3-hover-green" style="background-color:#66ba5b;" type="submit" value="Request new scan">
+                                      <button type="button" class="btn btn-success  w3-hover-green pull-right" data-dismiss="modal">Close</button>
+                                  </form>
+                            </div>
+                              <div class="modal-footer">
+                              </div>
+                            </div>
+                    </div>
+                  </div>
+                </div>
+
+            {% endif %}
         {% endif %}
         <br>
-
-
         <p style="padding-top: 10px">
             <a class="btn btn-success btn-lg" style="border:  solid thin black;  border-radius: 5px; " href="/"><i class="glyphicon glyphicon-chevron-left"></i> Back</a>
         </p>

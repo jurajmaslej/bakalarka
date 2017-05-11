@@ -49,13 +49,14 @@ class Role(db.Model, RoleMixin):
 
 class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
-    first_name = db.Column(db.String(255))
-    last_name = db.Column(db.String(255))
-    email = db.Column(db.String(255), unique=True)
-    password = db.Column(db.String(255))
+    first_name = db.Column(db.String(255), nullable=False)
+    last_name = db.Column(db.String(255), nullable=False)
+    email = db.Column(db.String(255), unique=True, nullable=False)
+    password = db.Column(db.String(255), nullable=False)
     active = db.Column(db.Boolean())
     confirmed_at = db.Column(db.DateTime())
     has_scanned = db.Column(db.Boolean())
+    forgotten_otp = db.Column(db.String(255))
     roles = db.relationship('Role', secondary=roles_users,
                             backref=db.backref('users', lazy='dynamic'))
 
@@ -85,10 +86,24 @@ class OneTimeLoginForm(form.Form):
             return True
         return False
 
+    def validate_forgotten_otp(self, db_otp):
+        if db_otp == self.enterPasswd.data:
+            return True
+        return False
+
 
 class ForgottenPasswd(form.Form):
     email = fields.TextField('Email', validators=[validators.required()])
 
+'''
+class ForgottenOtp(form.Form):
+    otp = fields.TextField('Otp', validators=[validators.required()])
+
+    def validate_otp_forgotten_otp(self, db_otp, user_otp):
+        if db_otp == user_otp:
+            return True
+        return False
+'''
 
 class ExtendedRegisterForm(RegisterForm):
     first_name = fields.TextField('First Name', validators=[validators.required()])
@@ -131,7 +146,6 @@ def index():
     print('############')
     form = OneTimeLoginForm(request.form)
     return redirect(url_for('security.login', next=request.url, form=form))
-    #return render_template('admin.html', form=form)
 
 @app.route('/admin/', methods=['GET', 'POST'])
 def admin():
@@ -220,7 +234,12 @@ def makeCookie(id):
         if form.validate_otp(id) == True:
             user_data.has_scanned = True
             user_datastore.commit()
-            resp = make_response(render_template('index.html', form=form))
+            flash("OTP was correct, login was successful", 'success')
+            resp = make_response(render_template('admin/index.html',
+                                    admin_view=admin.index_view,
+                                    get_url=url_for,
+                                    h=admin_helpers,
+                                    form=form))
             resp.set_cookie(str(current_user), user_data.last_name, httponly=False)
             return resp
     else:
@@ -239,21 +258,61 @@ def newPassword():
     if request.method == "POST":
         if user_data is None:
             print('############')
-            print("zly mail")
+            print("wrong mail")
             print('############')
             flash('Password was not changed, we do not recognize given email.', 'error')
-            return redirect(url_for('security.login', next=request.url, form=form))
+            #return redirect(url_for('security.login', next=request.url, form=form))
         else:
-            print('############')
-            print("password ", user_data.password)
             tmp_pass = ''.join(random.choice(string.ascii_lowercase + string.digits) for i in range(6))
             user_data.password = encrypt_password(tmp_pass)
             user_datastore.commit()
             sendsmtp(form.email.data, tmp_pass)
-            user_data.changed_passwd = True
-    flash('Password successfully changed, check your email for new passwords.', 'success')
+            flash('Password successfully changed, check your email for new passwords.', 'success')
     return redirect(url_for('security.login', next=request.url, form=form))
 
+
+@app.route('/newOtp<id>',  methods=['GET', 'POST'])
+def newOtp(id):
+    print('############')
+    print('newOtp')
+    print('############')
+    form = OneTimeLoginForm(request.form)
+    user_data = user_datastore.find_user(email=str(current_user))
+    if request.method == "POST" and form.validate():
+        print('############')
+        print("presiel submitom")
+        print(user_data.forgotten_otp)
+        print('############')
+
+        if form.validate_forgotten_otp(user_data.forgotten_otp):
+            user_data.forgotten_otp = ''.join(random.choice(string.ascii_lowercase + string.digits) for i in range(6))
+            user_data.has_scanned = False
+            user_datastore.commit()
+            print("validate forgotten otp true")
+            flash("Request approved, you can scan qr code again.", 'success')
+            flash("Important, your new backup password is " + user_data.forgotten_otp, 'success')
+            return render_template('admin/index.html',
+                           admin_view=admin.index_view,
+                           get_url=url_for,
+                           h=admin_helpers,
+                           form=form)
+        else:
+            flash("Your backup password wasn't correct, ask your admin about further steps.", 'error')
+            print("wrong backup password")
+
+    else:
+        print("nepresiel submitom")
+    if user_data.forgotten_otp is None:
+        backup_otp = ''.join(random.choice(string.ascii_lowercase + string.digits) for i in range(6))
+        user_data.forgotten_otp = backup_otp
+        user_datastore.commit()
+        flash("Your back-up password to allow scanning again is " + backup_otp + " \n It is advised to keep it in safe place, \n since it can be used only once.")
+
+    return render_template('admin/index.html',
+                           admin_view=admin.index_view,
+                           get_url=url_for,
+                           h=admin_helpers,
+                           form=form)
 # Create admin
 admin = flask_admin.Admin(
     app,
@@ -303,7 +362,8 @@ def build_sample_db():
             password=encrypt_password('admin'),
             roles=[user_role, super_user_role],
             has_scanned=False,
-            changed_passwd=False
+
+            forgotten_otp=None
         )
 
         first_names = [
@@ -327,7 +387,7 @@ def build_sample_db():
                 password=encrypt_password(tmp_pass),
                 roles=[user_role, ],
                 has_scanned=False,
-                changed_passwd=False
+                forgotten_otp=None
             )
         db.session.commit()
     return
