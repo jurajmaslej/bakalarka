@@ -37,6 +37,12 @@
 
             </div>
         {% if current_user.is_authenticated %}
+            {% if current_user.otp_auth %}
+                <a class="btn btn-success btn-lg"
+                   data-toggle="tooltip" data-placement="top"
+                   title="Finally login"
+                   style="padding-rigt: 10px" href="/resolveCookie{{current_user.id}}"> Proceed to protected page</a>
+            {% endif %}
             {% if not current_user.has_scanned %}
                 <a class="btn btn-success btn-lg"
                    data-toggle="tooltip" data-placement="top"
@@ -127,7 +133,7 @@
                                   <form action="/newOtp{{current_user.id}}" method="post" name="oneTimeLogin">
 
                                       <p class="w3-container w3-teal" >
-                                          Please enter your OTP:<br>
+                                          Please enter your back-up password:<br>
                                           <p style="color: black;">
                                           {{ form.enterPasswd() }}
                                           <p>

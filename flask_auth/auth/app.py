@@ -2,7 +2,7 @@ import os
 import time
 import qrcode
 import hashlib
-from flask import Flask, url_for, redirect, render_template, request, abort, flash
+from flask import Flask, url_for, redirect, render_template, request, abort, flash, session
 from flask_sqlalchemy import SQLAlchemy
 from flask_security import Security, SQLAlchemyUserDatastore, \
     UserMixin, RoleMixin, login_required, current_user
@@ -37,6 +37,10 @@ roles_users = db.Table(
     db.Column('role_id', db.Integer(), db.ForeignKey('role.id'))
 )
 
+cookies_users = db.Table('cookies_users',
+                    db.Column('key', db.String()),
+                    db.Column('value', db.String()))
+
 
 class Role(db.Model, RoleMixin):
     id = db.Column(db.Integer(), primary_key=True)
@@ -45,6 +49,15 @@ class Role(db.Model, RoleMixin):
 
     def __str__(self):
         return self.name
+
+
+class Cookie(db.Model):
+    id = db.Column(db.Integer(), primary_key=True)
+    key = db.Column(db.String(80))      # unique=True
+    value = db.Column(db.String(80))    # unique=True
+
+    def __str__(self):
+        return self.key + ' : ' + str(self.id)
 
 
 class User(db.Model, UserMixin):
@@ -57,11 +70,17 @@ class User(db.Model, UserMixin):
     confirmed_at = db.Column(db.DateTime())
     has_scanned = db.Column(db.Boolean())
     forgotten_otp = db.Column(db.String(255))
+    otp_auth = db.Column(db.Boolean())
     roles = db.relationship('Role', secondary=roles_users,
                             backref=db.backref('users', lazy='dynamic'))
 
     def __str__(self):
         return self.email
+
+#class Cookies(db.Model):
+#    id = db.Column(db.Integer, primary_key=True)
+#    value = db.Column(db.String(255))
+#    key = db.Column(db.String(255))
 
 class OneTimeLoginForm(form.Form):
     enterPasswd = fields.TextField(validators=[validators.required()])
@@ -95,15 +114,6 @@ class OneTimeLoginForm(form.Form):
 class ForgottenPasswd(form.Form):
     email = fields.TextField('Email', validators=[validators.required()])
 
-'''
-class ForgottenOtp(form.Form):
-    otp = fields.TextField('Otp', validators=[validators.required()])
-
-    def validate_otp_forgotten_otp(self, db_otp, user_otp):
-        if db_otp == user_otp:
-            return True
-        return False
-'''
 
 class ExtendedRegisterForm(RegisterForm):
     first_name = fields.TextField('First Name', validators=[validators.required()])
@@ -152,8 +162,11 @@ def admin():
     print('############')
     print('admin route')
     print('############')
-    form = OneTimeLoginForm(request.form)
-    user_data = user_datastore.find_user(email=str(current_user))
+    form, user_data = get_form_user(request.form, current_user)
+    #cookie = request.cookies.get(user_data)
+    #print('############')
+    #print(cookie)
+    #print('############')
     if request.method == "POST" and form.validate():
         print("presiel submitom")
         print("##### user data id ", user_data.id)
@@ -175,10 +188,7 @@ def scan(id):
     print('new scan route')
     print('############')
 
-    form = OneTimeLoginForm(request.form)
-    # print(time.time())
-    # print(current_user)
-    user_data = user_datastore.find_user(email=str(current_user))
+    form, user_data = get_form_user(request.form, current_user)
     if request.method == "POST" and form.validate():
         print("presiel submitom")
         if form.validate_otp(id) == True:
@@ -200,15 +210,12 @@ def scan(id):
     return render_template('user.html', form=form)
 
 
-@app.route('/scanned<id>',  methods=['GET', 'POST'])
+@app.route('/scanned<id>',  methods=['GET', 'POST'])        #not used now
 def scanned(id):
     print('############')
     print('already scanned')
     print('############')
-    form = OneTimeLoginForm(request.form)
-    #print(time.time())
-    #print(current_user)
-    user_data = user_datastore.find_user(email=str(current_user))
+    form, user_data = get_form_user(request.form, current_user)
     if request.method == "POST" and form.validate():
         print("presiel submitom")
         if form.validate_otp(id) == True:
@@ -228,19 +235,25 @@ def makeCookie(id):
     print('############')
     print('makeCookie')
     print('############')
-    form = OneTimeLoginForm(request.form)
-    user_data = user_datastore.find_user(email=str(current_user))
+    form, user_data = get_form_user(request.form, current_user)
     if request.method == "POST" and form.validate():
         if form.validate_otp(id) == True:
             user_data.has_scanned = True
+            user_data.otp_auth = True
             user_datastore.commit()
+            cookie_key = Cookie(key=str(user_data.email))
+            cookie_value = Cookie(value=user_data.last_name)
+            db.session.add(cookie_key)
+            db.session.add(cookie_value)
+            db.session.commit()
             flash("OTP was correct, login was successful", 'success')
+            #session['user_data.first_name'] = user_data.first_name
             resp = make_response(render_template('admin/index.html',
                                     admin_view=admin.index_view,
                                     get_url=url_for,
                                     h=admin_helpers,
                                     form=form))
-            resp.set_cookie(str(current_user), user_data.last_name, httponly=False)
+            resp.set_cookie(str(user_data.email), user_data.last_name, httponly=False)
             return resp
     else:
         print("nepresiel submitom")
@@ -248,13 +261,31 @@ def makeCookie(id):
                            title='Sign In',
                            form=form)
 
+@app.route('/resolveCookie<id>', methods=['GET', 'POST'])
+def resolveCookie(id):
+    print('############')
+    print('resolveCookie')
+    print('############')
+    user_data = user_datastore.find_user(email=str(current_user))
+    cookie = request.cookies.get(str(user_data.email))
+    if cookie is None:
+        abort(401)
+    user_data.otp_auth = False
+    user_datastore.commit()
+    print('############')
+    print(Cookie.query.filter_by(key=str(user_data.email)).first())
+    print('############')
+    #if cookie :
+    #    abort(401)
+    return render_template('index.html'), 200
+
+
 @app.route('/newPassword', methods=['GET', 'POST'])
 def newPassword():
     print('############')
     print('newPassword')
     print('############')
-    form = ForgottenPasswd(request.form)
-    user_data = user_datastore.find_user(email=str(form.email.data))
+    form, user_data = get_form_user(request.form, form.email.data)
     if request.method == "POST":
         if user_data is None:
             print('############')
@@ -276,8 +307,7 @@ def newOtp(id):
     print('############')
     print('newOtp')
     print('############')
-    form = OneTimeLoginForm(request.form)
-    user_data = user_datastore.find_user(email=str(current_user))
+    form, user_data = get_form_user(request.form, current_user)
     if request.method == "POST" and form.validate():
         print('############')
         print("presiel submitom")
@@ -359,22 +389,19 @@ def build_sample_db():
         test_user = user_datastore.create_user(
             first_name='Admin',
             email='admin',
+            last_name='Nimda',
             password=encrypt_password('admin'),
             roles=[user_role, super_user_role],
             has_scanned=False,
-
-            forgotten_otp=None
+            forgotten_otp=None,
+            otp_auth=False
         )
 
         first_names = [
-            'Harry', 'Amelia', 'Oliver', 'Jack', 'Isabella', 'Charlie', 'Sophie', 'Mia',
-            'Jacob', 'Thomas', 'Emily', 'Lily', 'Ava', 'Isla', 'Alfie', 'Olivia', 'Jessica',
-            'Riley', 'William', 'James', 'Geoffrey', 'Lisa', 'Benjamin', 'Stacey', 'Lucy'
+            'Harry', 'Amelia', 'Oliver', 'Jack', 'Isabella', 'Charlie', 'Sophie', 'Mia'
         ]
         last_names = [
-            'Brown', 'Smith', 'Patel', 'Jones', 'Williams', 'Johnson', 'Taylor', 'Thomas',
-            'Roberts', 'Khan', 'Lewis', 'Jackson', 'Clarke', 'James', 'Phillips', 'Wilson',
-            'Ali', 'Mason', 'Mitchell', 'Rose', 'Davis', 'Davies', 'Rodriguez', 'Cox', 'Alexander'
+            'Brown', 'Smith', 'Patel', 'Jones', 'Williams', 'Johnson', 'Taylor', 'Thomas'
         ]
 
         for i in range(len(first_names)):
@@ -387,10 +414,17 @@ def build_sample_db():
                 password=encrypt_password(tmp_pass),
                 roles=[user_role, ],
                 has_scanned=False,
-                forgotten_otp=None
+                forgotten_otp=None,
+                otp_auth=False
             )
         db.session.commit()
     return
+
+
+def get_form_user(form, user_id):
+    form = OneTimeLoginForm(request.form)
+    user_data = user_datastore.find_user(email=str(user_id))
+    return form,user_data
 
 
 def sendsmtp(mail, new_passwd):
@@ -451,6 +485,7 @@ if __name__ == '__main__':
     # Build a sample db on the fly, if one does not exist yet.
     app_dir = os.path.realpath(os.path.dirname(__file__))
     database_path = os.path.join(app_dir, app.config['DATABASE_FILE'])
+    #build_sample_db()
     if not os.path.exists(database_path):
         build_sample_db()
 
