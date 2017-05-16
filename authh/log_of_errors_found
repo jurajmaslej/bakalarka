@@ -1,8 +1,0 @@
-MA - mobile application
-WA - web application
-MW - using both
-3.4. -- MA --- click on 'new scan' does nothing,
-	WA --- changed checking hashed passd == passwd to passwd == passwd --- change in future to hash == hash
-	   --- TODO : password being saved in plain text, change to hash
-		    : when creating user in admin interface password not hashed, otherwise password saved as hash
-	MW --- generating OTP and logging with old user works fine
