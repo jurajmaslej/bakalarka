@@ -41,13 +41,17 @@
                 <a class="btn btn-success btn-lg"
                    data-toggle="tooltip" data-placement="top"
                    title="Finally login"
-                   style="padding-rigt: 10px" href="/resolveCookie{{current_user.id}}"> Proceed to protected page</a>
+                   style="padding-rigt: 10px" href="/resolveCookie"> Proceed to protected page</a>
+            <a class="btn btn-success btn-lg"
+                   data-toggle="tooltip" data-placement="top"
+                   title="Logout from otp authorization"
+                   style="padding-rigt: 10px" href="/deleteCookie"> Log me out of protected page</a>
             {% endif %}
             {% if not current_user.has_scanned %}
                 <a class="btn btn-success btn-lg"
                    data-toggle="tooltip" data-placement="top"
                    title="Use after first login, scan code with your device"
-                   style="padding-rigt: 10px" href="/newScan{{current_user.id}}"> scan</a>
+                   style="padding-rigt: 10px" href="/newScan/{{current_user.id}}"> scan</a>
             {% else %}
                 <p>Code scanned, you can add a new device. <br>
                    To do that, you will have to validate with otp from already functional device first.</p>
@@ -72,7 +76,7 @@
                             </div>
                           <div class="modal-body">
 
-                                  <form action="/newScan{{current_user.id}}" method="post" name="oneTimeLogin">
+                                  <form action="/scanNewDev/{{current_user.id}}" method="post" name="oneTimeLogin">
 
                                       <p class="w3-container w3-teal" >
                                           Please enter your OTP:<br>
@@ -95,7 +99,7 @@
         <a class="btn btn-success btn-lg"
            data-toggle="tooltip" data-placement="top"
            title="Login with password from device"
-           href="/scanned{{current_user.id}}"> Already scanned</a>
+           href="/scanned/{{current_user.id}}"> Already scanned</a>
             <br>
             {% if not current_user.forgotten_otp %}
             <a class="btn btn-success btn-lg"
@@ -103,7 +107,7 @@
                data-toggle="tooltip"
                data-placement="top"
                title="Highly advised to create, used to validate user in case of fault otp's being generated"
-               href="/newOtp{{current_user.id}}"> Create back-up otp</a>
+               href="/newOtp/{{current_user.id}}"> Create back-up otp</a>
 
             {% else %}
 
@@ -130,7 +134,7 @@
                             </div>
                           <div class="modal-body">
 
-                                  <form action="/newOtp{{current_user.id}}" method="post" name="oneTimeLogin">
+                                  <form action="/newOtp/{{current_user.id}}" method="post" name="oneTimeLogin">
 
                                       <p class="w3-container w3-teal" >
                                           Please enter your back-up password:<br>

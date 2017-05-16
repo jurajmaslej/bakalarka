@@ -54,10 +54,13 @@ class Role(db.Model, RoleMixin):
 class Cookie(db.Model):
     id = db.Column(db.Integer(), primary_key=True)
     key = db.Column(db.String(80))      # unique=True
-    value = db.Column(db.String(80))    # unique=True
+    value = db.Column(db.String(255))    # unique=True
 
     def __str__(self):
-        return self.key + ' : ' + str(self.id)
+        return self.key + ' : ' + self.value
+
+    def get_value(self):
+        return self.value
 
 
 class User(db.Model, UserMixin):
@@ -163,10 +166,6 @@ def admin():
     print('admin route')
     print('############')
     form, user_data = get_form_user(request.form, current_user)
-    #cookie = request.cookies.get(user_data)
-    #print('############')
-    #print(cookie)
-    #print('############')
     if request.method == "POST" and form.validate():
         print("presiel submitom")
         print("##### user data id ", user_data.id)
@@ -182,10 +181,10 @@ def admin():
                            get_url=url_for,
                            h=admin_helpers)
 
-@app.route('/newScan<id>', methods=[ 'GET','POST'])
+@app.route('/newScan/<id>', methods=[ 'GET','POST'])
 def scan(id):
     print('############')
-    print('new scan route')
+    print('new scan')
     print('############')
 
     form, user_data = get_form_user(request.form, current_user)
@@ -209,8 +208,28 @@ def scan(id):
     image.save(os.path.dirname(os.path.realpath(__file__)) + "/static/qr" + id + ".png", "PNG")
     return render_template('user.html', form=form)
 
+@app.route('/scanNewDev/<id>', methods=[ 'GET','POST'])
+def scanNewDev(id):
+    print('############')
+    print('scanNewDev')
+    print('############')
 
-@app.route('/scanned<id>',  methods=['GET', 'POST'])        #not used now
+    form, user_data = get_form_user(request.form, current_user)
+    if request.method == "POST" and form.validate():
+        print("presiel submitom")
+        if form.validate_otp(id) == True:
+            user_data.has_scanned = True
+            user_datastore.commit()
+            print("prihlasil si sa, has_scanned sa zmenilo ", current_user.has_scanned)
+            return redirect(url_for('.scan', id=id))
+        else:
+            flash("OTP was not correct, login was unsuccessful", 'error')
+    return render_template('admin/index.html', form=form,
+                            admin_view=admin.index_view,
+                            get_url=url_for,
+                            h=admin_helpers)
+
+@app.route('/scanned/<id>',  methods=['GET', 'POST'])
 def scanned(id):
     print('############')
     print('already scanned')
@@ -230,7 +249,7 @@ def scanned(id):
                            form=form)
 
 
-@app.route('/makeCookie<id>', methods=['GET', 'POST'])
+@app.route('/makeCookie/<id>', methods=['GET', 'POST'])
 def makeCookie(id):
     print('############')
     print('makeCookie')
@@ -241,19 +260,17 @@ def makeCookie(id):
             user_data.has_scanned = True
             user_data.otp_auth = True
             user_datastore.commit()
-            cookie_key = Cookie(key=str(user_data.email))
-            cookie_value = Cookie(value=user_data.last_name)
-            db.session.add(cookie_key)
-            db.session.add(cookie_value)
+            hashed_cook = hashlib.sha512((id + user_data.last_name).encode('utf-8')).hexdigest()
+            cook = Cookie(key='otp_auth', value=hashed_cook)
+            db.session.add(cook)
             db.session.commit()
             flash("OTP was correct, login was successful", 'success')
-            #session['user_data.first_name'] = user_data.first_name
             resp = make_response(render_template('admin/index.html',
                                     admin_view=admin.index_view,
                                     get_url=url_for,
                                     h=admin_helpers,
                                     form=form))
-            resp.set_cookie(str(user_data.email), user_data.last_name, httponly=False)
+            resp.set_cookie(user_data.email, hashed_cook, httponly=False)
             return resp
     else:
         print("nepresiel submitom")
@@ -261,23 +278,44 @@ def makeCookie(id):
                            title='Sign In',
                            form=form)
 
-@app.route('/resolveCookie<id>', methods=['GET', 'POST'])
-def resolveCookie(id):
+@app.route('/resolveCookie')
+def resolveCookie():
     print('############')
     print('resolveCookie')
     print('############')
     user_data = user_datastore.find_user(email=str(current_user))
-    cookie = request.cookies.get(str(user_data.email))
+    cookie = request.cookies.get(user_data.email)
     if cookie is None:
         abort(401)
     user_data.otp_auth = False
     user_datastore.commit()
+    ck = Cookie.query.filter_by(value=cookie).first()
+    if ck is None:
+        abort(401)
+    return "", 204
+
+@app.route('/deleteCookie')
+def deleteCookie():
     print('############')
-    print(Cookie.query.filter_by(key=str(user_data.email)).first())
+    print('deletecookie')
     print('############')
-    #if cookie :
-    #    abort(401)
-    return render_template('index.html'), 200
+    form, user_data = get_form_user(request.form, current_user)
+    user_data = user_datastore.find_user(email=str(current_user))
+    cookie = request.cookies.get(user_data.email)
+    if cookie is None:
+        abort(401)
+    user_data.otp_auth = False
+    user_datastore.commit()
+    ck = Cookie.query.filter_by(value=cookie).first()
+    if ck is None:
+        abort(401)
+    db.session.delete(ck)
+    db.session.commit()
+    flash("Successfully logged out, cookie was deleted. You can log in.",  'success')
+    return render_template('admin/index.html', form=form,
+                           admin_view=admin.index_view,
+                           get_url=url_for,
+                           h=admin_helpers)
 
 
 @app.route('/newPassword', methods=['GET', 'POST'])
@@ -302,17 +340,13 @@ def newPassword():
     return redirect(url_for('security.login', next=request.url, form=form))
 
 
-@app.route('/newOtp<id>',  methods=['GET', 'POST'])
+@app.route('/newOtp/<id>',  methods=['GET', 'POST'])
 def newOtp(id):
     print('############')
     print('newOtp')
     print('############')
     form, user_data = get_form_user(request.form, current_user)
     if request.method == "POST" and form.validate():
-        print('############')
-        print("presiel submitom")
-        print(user_data.forgotten_otp)
-        print('############')
 
         if form.validate_forgotten_otp(user_data.forgotten_otp):
             user_data.forgotten_otp = ''.join(random.choice(string.ascii_lowercase + string.digits) for i in range(6))
@@ -334,7 +368,7 @@ def newOtp(id):
         print("nepresiel submitom")
     if user_data.forgotten_otp is None:
         backup_otp = ''.join(random.choice(string.ascii_lowercase + string.digits) for i in range(6))
-        user_data.forgotten_otp = backup_otp
+        user_data.forgotten_otp = encrypt_password(backup_otp)
         user_datastore.commit()
         flash("Your back-up password to allow scanning again is " + backup_otp + " \n It is advised to keep it in safe place, \n since it can be used only once.")
 
@@ -398,10 +432,10 @@ def build_sample_db():
         )
 
         first_names = [
-            'Harry', 'Amelia', 'Oliver', 'Jack', 'Isabella', 'Charlie', 'Sophie', 'Mia'
+            'Harry', 'Amelia', 'Oliver', 'Jack'
         ]
         last_names = [
-            'Brown', 'Smith', 'Patel', 'Jones', 'Williams', 'Johnson', 'Taylor', 'Thomas'
+            'Brown', 'Smith', 'Patel', 'Jones'
         ]
 
         for i in range(len(first_names)):
