@@ -2,12 +2,12 @@ import os
 import time
 import qrcode
 import hashlib
-from flask import Flask, url_for, redirect, render_template, request, abort, flash, session
+from flask import Flask, url_for, redirect, render_template, request, abort, flash
 from flask_sqlalchemy import SQLAlchemy
 from flask_security import Security, SQLAlchemyUserDatastore, \
-    UserMixin, RoleMixin, login_required, current_user
+    UserMixin, RoleMixin, current_user
 from wtforms import form, fields, validators
-from flask.ext import admin, login, mail
+#from flask.ext import admin, login, mail
 from flask_security.utils import encrypt_password
 import flask_admin
 from flask_admin.contrib import sqla
