@@ -323,7 +323,8 @@ def newPassword():
     print('############')
     print('newPassword')
     print('############')
-    form, user_data = get_form_user(request.form, form.email.data)
+    form = ForgottenPasswd(request.form)
+    user_data = user_datastore.find_user(email=str(form.email.data))
     if request.method == "POST":
         if user_data is None:
             print('############')
@@ -335,8 +336,11 @@ def newPassword():
             tmp_pass = ''.join(random.choice(string.ascii_lowercase + string.digits) for i in range(6))
             user_data.password = encrypt_password(tmp_pass)
             user_datastore.commit()
-            sendsmtp(form.email.data, tmp_pass)
-            flash('Password successfully changed, check your email for new passwords.', 'success')
+            sent = sendsmtp(form.email.data, tmp_pass)
+            if sent:
+                flash('Password successfully changed, check your email for new passwords.', 'success')
+            else:
+                flash('Password was not changed, sending email failed.', 'error')
     return redirect(url_for('security.login', next=request.url, form=form))
 
 
@@ -484,9 +488,11 @@ def sendsmtp(mail, new_passwd):
         server_ssl.sendmail(sender, recipient, msg.as_string())
         server_ssl.close()
         print("successfully sent email to " + recipient)
+        return True
     except:
         print("failed to sent email from " + sender + " to " + recipient)
 
+    return False
 def makeQr(user_id):
         qr = qrcode.QRCode(
             version=1,
