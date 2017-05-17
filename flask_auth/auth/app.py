@@ -6,8 +6,9 @@ from flask import Flask, url_for, redirect, render_template, request, abort, fla
 from flask_sqlalchemy import SQLAlchemy
 from flask_security import Security, SQLAlchemyUserDatastore, \
     UserMixin, RoleMixin, current_user
+from flask.ext import admin, login
+
 from wtforms import form, fields, validators
-#from flask.ext import admin, login, mail
 from flask_security.utils import encrypt_password
 import flask_admin
 from flask_admin.contrib import sqla
