@@ -112,9 +112,11 @@ class OneTimeLoginForm(form.Form):
     def validate_forgotten_otp(self, db_otp):
         print('db_otp ', db_otp)
         print('from form ', self.enterPasswd.data)
-        #print('from form ', encrypt_password(self.enterPasswd.data))
-        #if db_otp == encrypt_password(self.enterPasswd.data):
-        if db_otp == self.enterPasswd.data:
+        print('from form ', encrypt_password(self.enterPasswd.data))
+        print('tryin ', encrypt_password('12345asd'))
+        print('tryin ', encrypt_password('12345asd'))
+        if db_otp == encrypt_password(self.enterPasswd.data):
+            #if db_otp == self.enterPasswd.data:
             return True
         return False
 
@@ -407,8 +409,8 @@ def new_otp(id):
         backup_otp = ''.join(random.choice(string.ascii_lowercase + string.digits) for i in range(6))
         print('####### new otp into db')
         print(backup_otp)
-        user_data.forgotten_otp = backup_otp
-        #user_data.forgotten_otp = encrypt_password(backup_otp)
+        #user_data.forgotten_otp = backup_otp
+        user_data.forgotten_otp = encrypt_password(backup_otp)
         user_datastore.commit()
         flash("Your back-up password to allow scanning again is " + backup_otp + " \n It is advised to keep it in safe place, \n since it can be used only once.")
 
