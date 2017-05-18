@@ -110,6 +110,10 @@ class OneTimeLoginForm(form.Form):
         return False
 
     def validate_forgotten_otp(self, db_otp):
+        print('db_otp ', db_otp)
+        print('from form ', self.enterPasswd.data)
+        #print('from form ', encrypt_password(self.enterPasswd.data))
+        #if db_otp == encrypt_password(self.enterPasswd.data):
         if db_otp == self.enterPasswd.data:
             return True
         return False
@@ -170,7 +174,7 @@ def admin():
     if request.method == "POST" and form.validate():
         print("presiel submitom")
         print("##### user data id ", user_data.id)
-        if form.validate_otp(str(user_data.id)) == True:
+        if form.validate_otp(str(user_data.id)):
             user_data.has_scanned = True
             user_datastore.commit()
             print("prihlasil si sa, has_scanned sa zmenilo ", current_user.has_scanned)
@@ -182,7 +186,7 @@ def admin():
                            get_url=url_for,
                            h=admin_helpers)
 
-@app.route('/newScan/<id>', methods=[ 'GET','POST'])
+@app.route('/new_scan/<id>', methods=[ 'GET','POST'])
 def scan(id):
     print('############')
     print('new scan')
@@ -191,7 +195,7 @@ def scan(id):
     form, user_data = get_form_user(request.form, current_user)
     if request.method == "POST" and form.validate():
         print("presiel submitom")
-        if form.validate_otp(id) == True:
+        if form.validate_otp(id):
             user_data.has_scanned = True
             user_datastore.commit()
             print("prihlasil si sa, has_scanned sa zmenilo ", current_user.has_scanned)
@@ -209,8 +213,8 @@ def scan(id):
     image.save(os.path.dirname(os.path.realpath(__file__)) + "/static/qr" + id + ".png", "PNG")
     return render_template('user.html', form=form)
 
-@app.route('/scanNewDev/<id>', methods=[ 'GET','POST'])
-def scanNewDev(id):
+@app.route('/scan_new_dev/<id>', methods=[ 'GET','POST'])
+def scan_new_dev(id):
     print('############')
     print('scanNewDev')
     print('############')
@@ -218,7 +222,7 @@ def scanNewDev(id):
     form, user_data = get_form_user(request.form, current_user)
     if request.method == "POST" and form.validate():
         print("presiel submitom")
-        if form.validate_otp(id) == True:
+        if form.validate_otp(id):
             user_data.has_scanned = True
             user_datastore.commit()
             print("prihlasil si sa, has_scanned sa zmenilo ", current_user.has_scanned)
@@ -238,7 +242,7 @@ def scanned(id):
     form, user_data = get_form_user(request.form, current_user)
     if request.method == "POST" and form.validate():
         print("presiel submitom")
-        if form.validate_otp(id) == True:
+        if form.validate_otp(id):
             user_data.has_scanned = True
             user_datastore.commit()
             print("prihlasil si sa, has_scanned sa zmenilo ", current_user.has_scanned)
@@ -250,14 +254,29 @@ def scanned(id):
                            form=form)
 
 
-@app.route('/login/<id>', methods=['GET', 'POST'])
-def make_cookie(id):
+@app.route('/login', methods=['GET', 'POST'])
+def make_cookie():
     print('############')
     print('login- ex makecookie')
     print('############')
     form, user_data = get_form_user(request.form, current_user)
+    id = str(user_data.id)
+
+    # redirect if already logged in
+    cookie = request.cookies.get('OTP_AUTH')
+    if cookie is not None:
+        print('failing at cookie is none')
+
+        ck = Cookie.query.filter_by(value=cookie).first()
+        if ck is not None:
+            return redirect(url_for('admin.index', form=form,
+                            admin_view=admin.index_view,
+                            get_url=url_for,
+                            h=admin_helpers))
+    # end redirect
+
     if request.method == "POST" and form.validate():
-        if form.validate_otp(id) == True:
+        if form.validate_otp(id):
             user_data.has_scanned = True
             user_data.otp_auth = True
             user_datastore.commit()
@@ -271,7 +290,8 @@ def make_cookie(id):
                                     get_url=url_for,
                                     h=admin_helpers,
                                     form=form))
-            resp.set_cookie('OTP_AUTH', 'OTP_AUTH', httponly=False, domain='.imterra.com')
+            #resp.set_cookie('OTP_AUTH', hashed_cook, httponly=False, domain='.imterra.com')
+            resp.set_cookie('OTP_AUTH', hashed_cook, httponly=False)
             cookie = request.cookies.get('OTP_AUTH')
             print('#####')
             print(cookie)
@@ -292,11 +312,14 @@ def resolve_cookie():
     print('#####')
     print(cookie)
     if cookie is None:
+        print('failing at cookie is none')
         abort(401)
     user_data.otp_auth = False
     user_datastore.commit()
     ck = Cookie.query.filter_by(value=cookie).first()
     if ck is None:
+        print('ck was : ')
+        print(ck)
         abort(401)
     return "", 204
 
@@ -324,8 +347,8 @@ def delete_cookie():
                            h=admin_helpers)
 
 
-@app.route('/newPassword', methods=['GET', 'POST'])
-def newPassword():
+@app.route('/new_password', methods=['GET', 'POST'])
+def new_password():
     print('############')
     print('newPassword')
     print('############')
@@ -350,8 +373,8 @@ def newPassword():
     return redirect(url_for('security.login', next=request.url, form=form))
 
 
-@app.route('/newOtp/<id>',  methods=['GET', 'POST'])
-def newOtp(id):
+@app.route('/new_otp/<id>',  methods=['GET', 'POST'])
+def new_otp(id):
     print('############')
     print('newOtp')
     print('############')
@@ -359,12 +382,16 @@ def newOtp(id):
     if request.method == "POST" and form.validate():
 
         if form.validate_forgotten_otp(user_data.forgotten_otp):
-            user_data.forgotten_otp = ''.join(random.choice(string.ascii_lowercase + string.digits) for i in range(6))
+            backup_otp = ''.join(random.choice(string.ascii_lowercase + string.digits) for i in range(6))
+            print('####### new otp into db')
+            print(backup_otp)
+            user_data.forgotten_otp = backup_otp
+            #user_data.forgotten_otp = encrypt_password(backup_otp)
             user_data.has_scanned = False
             user_datastore.commit()
             print("validate forgotten otp true")
             flash("Request approved, you can scan qr code again.", 'success')
-            flash("Important, your new backup password is " + user_data.forgotten_otp, 'success')
+            flash("Important, your new backup password is " + str(backup_otp), 'success')
             return render_template('admin/index.html',
                            admin_view=admin.index_view,
                            get_url=url_for,
@@ -378,7 +405,10 @@ def newOtp(id):
         print("nepresiel submitom")
     if user_data.forgotten_otp is None:
         backup_otp = ''.join(random.choice(string.ascii_lowercase + string.digits) for i in range(6))
-        user_data.forgotten_otp = encrypt_password(backup_otp)
+        print('####### new otp into db')
+        print(backup_otp)
+        user_data.forgotten_otp = backup_otp
+        #user_data.forgotten_otp = encrypt_password(backup_otp)
         user_datastore.commit()
         flash("Your back-up password to allow scanning again is " + backup_otp + " \n It is advised to keep it in safe place, \n since it can be used only once.")
 

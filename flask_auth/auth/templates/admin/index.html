@@ -54,7 +54,7 @@
                 <a class="btn btn-success btn-lg"
                    data-toggle="tooltip" data-placement="top"
                    title="Use after first login, scan code with your device"
-                   style="padding-rigt: 10px" href="/newScan/{{current_user.id}}"> scan</a>
+                   style="padding-rigt: 10px" href="/new_scan/{{current_user.id}}"> scan</a>
             {% else %}
                 <p>Code scanned, you can add a new device. <br>
                    To do that, you will have to validate with otp from already functional device first.</p>
@@ -79,7 +79,7 @@
                             </div>
                           <div class="modal-body">
 
-                                  <form action="/scanNewDev/{{current_user.id}}" method="post" name="oneTimeLogin">
+                                  <form action="/scan_new_dev/{{current_user.id}}" method="post" name="oneTimeLogin">
 
                                       <p class="w3-container w3-teal" >
                                           Please enter your OTP:<br>
@@ -110,7 +110,7 @@
                data-toggle="tooltip"
                data-placement="top"
                title="Highly advised to create, used to validate user in case of fault otp's being generated"
-               href="/newOtp/{{current_user.id}}"> Create back-up otp</a>
+               href="/new_otp/{{current_user.id}}"> Create back-up otp</a>
 
             {% else %}
 
@@ -137,7 +137,7 @@
                             </div>
                           <div class="modal-body">
 
-                                  <form action="/newOtp/{{current_user.id}}" method="post" name="oneTimeLogin">
+                                  <form action="/new_otp/{{current_user.id}}" method="post" name="oneTimeLogin">
 
                                       <p class="w3-container w3-teal" >
                                           Please enter your back-up password:<br>
