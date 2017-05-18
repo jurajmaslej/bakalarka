@@ -10,6 +10,8 @@ from flask.ext import admin, login
 
 from wtforms import form, fields, validators
 from flask_security.utils import encrypt_password
+from werkzeug.security import generate_password_hash, \
+    check_password_hash
 import flask_admin
 from flask_admin.contrib import sqla
 from flask_admin import helpers as admin_helpers
@@ -112,10 +114,8 @@ class OneTimeLoginForm(form.Form):
     def validate_forgotten_otp(self, db_otp):
         print('db_otp ', db_otp)
         print('from form ', self.enterPasswd.data)
-        print('from form ', encrypt_password(self.enterPasswd.data))
-        print('tryin ', encrypt_password('12345asd'))
-        print('tryin ', encrypt_password('12345asd'))
-        if db_otp == encrypt_password(self.enterPasswd.data):
+
+        if check_password_hash(db_otp, self.enterPasswd.data):
             #if db_otp == self.enterPasswd.data:
             return True
         return False
@@ -375,8 +375,8 @@ def new_password():
     return redirect(url_for('security.login', next=request.url, form=form))
 
 
-@app.route('/new_otp/<id>',  methods=['GET', 'POST'])
-def new_otp(id):
+@app.route('/new_otp',  methods=['GET', 'POST'])
+def new_otp():
     print('############')
     print('newOtp')
     print('############')
@@ -385,10 +385,7 @@ def new_otp(id):
 
         if form.validate_forgotten_otp(user_data.forgotten_otp):
             backup_otp = ''.join(random.choice(string.ascii_lowercase + string.digits) for i in range(6))
-            print('####### new otp into db')
-            print(backup_otp)
-            user_data.forgotten_otp = backup_otp
-            #user_data.forgotten_otp = encrypt_password(backup_otp)
+            user_data.forgotten_otp = generate_password_hash(backup_otp)
             user_data.has_scanned = False
             user_datastore.commit()
             print("validate forgotten otp true")
@@ -407,12 +404,9 @@ def new_otp(id):
         print("nepresiel submitom")
     if user_data.forgotten_otp is None:
         backup_otp = ''.join(random.choice(string.ascii_lowercase + string.digits) for i in range(6))
-        print('####### new otp into db')
-        print(backup_otp)
-        #user_data.forgotten_otp = backup_otp
-        user_data.forgotten_otp = encrypt_password(backup_otp)
+        user_data.forgotten_otp = generate_password_hash(backup_otp)
         user_datastore.commit()
-        flash("Your back-up password to allow scanning again is " + backup_otp + " \n It is advised to keep it in safe place, \n since it can be used only once.")
+        flash("Your back-up password to allow scanning again is " + backup_otp + " \n It is advised to keep it in safe place, \n since it can be used only once.", 'success')
 
     return render_template('admin/index.html',
                            admin_view=admin.index_view,

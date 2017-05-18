@@ -110,7 +110,7 @@
                data-toggle="tooltip"
                data-placement="top"
                title="Highly advised to create, used to validate user in case of fault otp's being generated"
-               href="/new_otp/{{current_user.id}}"> Create back-up otp</a>
+               href="/new_otp"> Create back-up otp</a>
 
             {% else %}
 
@@ -137,7 +137,7 @@
                             </div>
                           <div class="modal-body">
 
-                                  <form action="/new_otp/{{current_user.id}}" method="post" name="oneTimeLogin">
+                                  <form action="/new_otp" method="post" name="oneTimeLogin">
 
                                       <p class="w3-container w3-teal" >
                                           Please enter your back-up password:<br>
