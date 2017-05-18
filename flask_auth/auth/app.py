@@ -250,10 +250,10 @@ def scanned(id):
                            form=form)
 
 
-@app.route('/makeCookie/<id>', methods=['GET', 'POST'])
-def makeCookie(id):
+@app.route('/login/<id>', methods=['GET', 'POST'])
+def make_cookie(id):
     print('############')
-    print('makeCookie')
+    print('login- ex makecookie')
     print('############')
     form, user_data = get_form_user(request.form, current_user)
     if request.method == "POST" and form.validate():
@@ -271,7 +271,10 @@ def makeCookie(id):
                                     get_url=url_for,
                                     h=admin_helpers,
                                     form=form))
-            resp.set_cookie(user_data.email, hashed_cook, httponly=False)
+            resp.set_cookie('OTP_AUTH', 'OTP_AUTH', httponly=False, domain='.imterra.com')
+            cookie = request.cookies.get('OTP_AUTH')
+            print('#####')
+            print(cookie)
             return resp
     else:
         print("nepresiel submitom")
@@ -279,13 +282,15 @@ def makeCookie(id):
                            title='Sign In',
                            form=form)
 
-@app.route('/resolveCookie')
-def resolveCookie():
+@app.route('/auth')
+def resolve_cookie():
     print('############')
-    print('resolveCookie')
+    print('auth')
     print('############')
     user_data = user_datastore.find_user(email=str(current_user))
-    cookie = request.cookies.get(user_data.email)
+    cookie = request.cookies.get('OTP_AUTH')
+    print('#####')
+    print(cookie)
     if cookie is None:
         abort(401)
     user_data.otp_auth = False
@@ -295,14 +300,14 @@ def resolveCookie():
         abort(401)
     return "", 204
 
-@app.route('/deleteCookie')
-def deleteCookie():
+@app.route('/delete_cookie')
+def delete_cookie():
     print('############')
     print('deletecookie')
     print('############')
     form, user_data = get_form_user(request.form, current_user)
     user_data = user_datastore.find_user(email=str(current_user))
-    cookie = request.cookies.get(user_data.email)
+    cookie = request.cookies.get('OTP_AUTH')
     if cookie is None:
         abort(401)
     user_data.otp_auth = False
