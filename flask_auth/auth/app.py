@@ -172,6 +172,7 @@ def admin():
     print('############')
     print('admin route')
     print('############')
+
     form, user_data = get_form_user(request.form, current_user)
     if request.method == "POST" and form.validate():
         print("presiel submitom")
@@ -195,7 +196,7 @@ def scan(id):
     print('############')
 
     form, user_data = get_form_user(request.form, current_user)
-    if request.method == "POST" and form.validate():
+    if request.method == "POST" and form.validate():   #never happens?
         print("presiel submitom")
         if form.validate_otp(id):
             user_data.has_scanned = True
@@ -236,7 +237,7 @@ def scan_new_dev(id):
                             get_url=url_for,
                             h=admin_helpers)
 
-@app.route('/scanned/<id>',  methods=['GET', 'POST'])
+@app.route('/scanned/<id>',  methods=['GET', 'POST'])   #not used now
 def scanned(id):
     print('############')
     print('already scanned')
@@ -267,7 +268,6 @@ def make_cookie():
     # redirect if already logged in
     cookie = request.cookies.get('OTP_AUTH')
     if cookie is not None:
-        print('failing at cookie is none')
 
         ck = Cookie.query.filter_by(value=cookie).first()
         if ck is not None:
@@ -292,11 +292,10 @@ def make_cookie():
                                     get_url=url_for,
                                     h=admin_helpers,
                                     form=form))
-            #resp.set_cookie('OTP_AUTH', hashed_cook, httponly=False, domain='.imterra.com')
-            resp.set_cookie('OTP_AUTH', hashed_cook, httponly=False)
-            cookie = request.cookies.get('OTP_AUTH')
-            print('#####')
-            print(cookie)
+            resp.set_cookie('OTP_AUTH', hashed_cook, httponly=False, domain='.imterra.com')
+            #resp.set_cookie('OTP_AUTH', hashed_cook, httponly=False)
+            user_data.otp_auth = True
+            user_datastore.commit()
             return resp
     else:
         print("nepresiel submitom")
@@ -309,15 +308,12 @@ def resolve_cookie():
     print('############')
     print('auth')
     print('############')
-    user_data = user_datastore.find_user(email=str(current_user))
     cookie = request.cookies.get('OTP_AUTH')
     print('#####')
     print(cookie)
     if cookie is None:
         print('failing at cookie is none')
         abort(401)
-    user_data.otp_auth = False
-    user_datastore.commit()
     ck = Cookie.query.filter_by(value=cookie).first()
     if ck is None:
         print('ck was : ')
