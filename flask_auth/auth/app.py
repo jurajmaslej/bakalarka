@@ -72,41 +72,36 @@ class User(db.Model, UserMixin):
     last_name = db.Column(db.String(255), nullable=False)
     email = db.Column(db.String(255), unique=True, nullable=False)
     password = db.Column(db.String(255), nullable=False)
-    active = db.Column(db.Boolean())
-    confirmed_at = db.Column(db.DateTime())
+    active = db.Column(db.Boolean())  # not needed
+    confirmed_at = db.Column(db.DateTime())     # not needed
     has_scanned = db.Column(db.Boolean())
     forgotten_otp = db.Column(db.String(255))
     otp_auth = db.Column(db.Boolean())
     roles = db.relationship('Role', secondary=roles_users,
                             backref=db.backref('users', lazy='dynamic'))
+    rand_string = db.Column(db.String(255))
 
     def __str__(self):
         return self.email
 
-#class Cookies(db.Model):
-#    id = db.Column(db.Integer, primary_key=True)
-#    value = db.Column(db.String(255))
-#    key = db.Column(db.String(255))
-
+# Forms
 class OneTimeLoginForm(form.Form):
     enterPasswd = fields.TextField(validators=[validators.required()])
 
-    def generate_passwd(self, id):
+    def generate_passwd(self, id, rand_str):
         timeStamp = time.time()
         timeStamp = str(timeStamp)
         #print(timeStamp)
         timeStamp = timeStamp[:8]
-        #print (timeStamp)
-        #print(id)
-        print("ide sa hesovat " + timeStamp + " # " + id)
-        passwd = hashlib.sha512((id + timeStamp).encode('utf-8')).hexdigest()
+        print("ide sa hesovat " + id + " # " + timeStamp + ' # ' + rand_str)
+        passwd = hashlib.sha512((id + rand_str + timeStamp).encode('utf-8')).hexdigest()
         print("heslo " + passwd[:8])
         return passwd
 
-    def validate_otp(self, id):
-        print("heslo vygenerovane serverom ", self.generate_passwd(id)[:8])
+    def validate_otp(self, id, rand_str):
+        #print("heslo vygenerovane serverom ", self.generate_passwd(id)[:8], rand_str)
         print("heslo natukane do formu ", self.enterPasswd.data)
-        if self.generate_passwd(id)[:8] == self.enterPasswd.data:
+        if self.generate_passwd(id, rand_str)[:8] == self.enterPasswd.data:
             print("hesla sa zhoduju ")
             return True
         return False
@@ -177,7 +172,7 @@ def admin():
     if request.method == "POST" and form.validate():
         print("presiel submitom")
         print("##### user data id ", user_data.id)
-        if form.validate_otp(str(user_data.id)):
+        if form.validate_otp(str(user_data.id), user_data.rand_string):
             user_data.has_scanned = True
             user_datastore.commit()
             print("prihlasil si sa, has_scanned sa zmenilo ", current_user.has_scanned)
@@ -198,7 +193,7 @@ def scan(id):
     form, user_data = get_form_user(request.form, current_user)
     if request.method == "POST" and form.validate():   #never happens?
         print("presiel submitom")
-        if form.validate_otp(id):
+        if form.validate_otp(id, user_data.rand_string):
             user_data.has_scanned = True
             user_datastore.commit()
             print("prihlasil si sa, has_scanned sa zmenilo ", current_user.has_scanned)
@@ -211,7 +206,10 @@ def scan(id):
     else:
         print("nepresiel submitom")
 
-    image = makeQr(login.current_user.id)
+    if user_data.rand_string is None:
+        user_data.rand_string = get_random()
+        user_datastore.commit()
+    image = makeQr(login.current_user.id, user_data.rand_string)
     print(os.path.dirname(os.path.realpath(__file__)))
     image.save(os.path.dirname(os.path.realpath(__file__)) + "/static/qr" + id + ".png", "PNG")
     return render_template('user.html', form=form)
@@ -225,7 +223,7 @@ def scan_new_dev(id):
     form, user_data = get_form_user(request.form, current_user)
     if request.method == "POST" and form.validate():
         print("presiel submitom")
-        if form.validate_otp(id):
+        if form.validate_otp(id, user_data.rand_string):
             user_data.has_scanned = True
             user_datastore.commit()
             print("prihlasil si sa, has_scanned sa zmenilo ", current_user.has_scanned)
@@ -245,7 +243,7 @@ def scanned(id):
     form, user_data = get_form_user(request.form, current_user)
     if request.method == "POST" and form.validate():
         print("presiel submitom")
-        if form.validate_otp(id):
+        if form.validate_otp(id, user_data.rand_string):
             user_data.has_scanned = True
             user_datastore.commit()
             print("prihlasil si sa, has_scanned sa zmenilo ", current_user.has_scanned)
@@ -271,6 +269,9 @@ def make_cookie():
 
         ck = Cookie.query.filter_by(value=cookie).first()
         if ck is not None:
+            print(' #### Cookie already exisiting ##### ')
+            user_data.otp_auth = True
+            user_datastore.commit()
             return redirect(url_for('admin.index', form=form,
                             admin_view=admin.index_view,
                             get_url=url_for,
@@ -278,11 +279,12 @@ def make_cookie():
     # end redirect
 
     if request.method == "POST" and form.validate():
-        if form.validate_otp(id):
+        if form.validate_otp(id, user_data.rand_string):
             user_data.has_scanned = True
             user_data.otp_auth = True
             user_datastore.commit()
-            hashed_cook = hashlib.sha512((id + user_data.last_name).encode('utf-8')).hexdigest()
+            rand_string = get_random()
+            hashed_cook = hashlib.sha512((id + rand_string).encode('utf-8')).hexdigest()
             cook = Cookie(key='otp_auth', value=hashed_cook)
             db.session.add(cook)
             db.session.commit()
@@ -292,7 +294,8 @@ def make_cookie():
                                     get_url=url_for,
                                     h=admin_helpers,
                                     form=form))
-            resp.set_cookie('OTP_AUTH', hashed_cook, httponly=False, domain='.imterra.com')
+            resp.set_cookie('otp_auth', hashed_cook, httponly=False, domain='.imterra.com')
+            # to run on localhost comment line above, de-comment line below
             #resp.set_cookie('OTP_AUTH', hashed_cook, httponly=False)
             user_data.otp_auth = True
             user_datastore.commit()
@@ -330,11 +333,13 @@ def delete_cookie():
     user_data = user_datastore.find_user(email=str(current_user))
     cookie = request.cookies.get('OTP_AUTH')
     if cookie is None:
+        print('none cookie')
         abort(401)
     user_data.otp_auth = False
     user_datastore.commit()
     ck = Cookie.query.filter_by(value=cookie).first()
     if ck is None:
+        print('ck is none')
         abort(401)
     db.session.delete(ck)
     db.session.commit()
@@ -460,7 +465,8 @@ def build_sample_db():
             roles=[user_role, super_user_role],
             has_scanned=False,
             forgotten_otp=None,
-            otp_auth=False
+            otp_auth=False,
+            rand_string=None
         )
 
         first_names = [
@@ -481,7 +487,8 @@ def build_sample_db():
                 roles=[user_role, ],
                 has_scanned=False,
                 forgotten_otp=None,
-                otp_auth=False
+                otp_auth=False,
+                rand_string=None
             )
         db.session.commit()
     return
@@ -521,7 +528,14 @@ def sendsmtp(mail, new_passwd):
         print("failed to sent email from " + sender + " to " + recipient)
 
     return False
-def makeQr(user_id):
+
+
+def get_random():
+    tmp_pass = ''.join(random.choice(string.ascii_lowercase + string.digits) for i in range(10))
+    return tmp_pass
+
+
+def makeQr(user_id, rand_str):
         qr = qrcode.QRCode(
             version=1,
             error_correction=qrcode.constants.ERROR_CORRECT_L,
@@ -534,7 +548,7 @@ def makeQr(user_id):
         time1 = str(time1)
         time1 = time1[:10] ##sekundova presnost
         print("cas co ide do qr kodu " + time1)
-        qr.add_data( time1 + "#" +str(user_id))
+        qr.add_data(time1 + "#" + str(user_id) + rand_str)
         qr.make(fit=True)
 
         return qr.make_image()

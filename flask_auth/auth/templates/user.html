@@ -3,8 +3,14 @@
 {% block title %} OTP form page {% endblock %}
 
 {% block content %}
+  <script>
+    setTimeout(function(){
+    window.location.reload(1);
+    }, 5000);
+  </script>
   <h1 class="w3-container w3-teal ">User: {{ current_user.first_name }}</h1>
   <hr>
+    <p >Page is being automatically refreshed, so that qr code will be up to date</p>
     <img src="/static/qr{{current_user.id}}.png" alt="qr code" style="width:304px;height:228px;">
   <p></p>
     <a class="btn btn-success btn-lg" style="padding-right: 10px; margin-vertical: 10px " href="/scanned/{{current_user.id}}"> Scan done</a>
