@@ -9,11 +9,8 @@
         <div class="col-sm-10 col-sm-offset-1">
 
             {% if not current_user.is_authenticated %}
-                <p>You can register as a regular user, or log in as a superuser with the following credentials:
-                <ul>
-                    <li>email: <b>admin</b></li>
-                    <li>password: <b>admin</b></li>
-                </ul>
+                <p>You can register as a regular user, or log in if you already have an account
+
                 <p>
                     <a class="btn btn-success" href="{{ url_for('security.login') }}">login</a> <a class="btn btn-success" href="{{ url_for('security.register') }}">register</a>
                 </p>
@@ -44,7 +41,7 @@
                 <a class="btn btn-success btn-lg"
                    data-toggle="tooltip" data-placement="top"
                    title="Finally login"
-                   style="padding-rigt: 10px" href="www.imterra.com"> Proceed to protected page</a>
+                   style="padding-rigt: 10px" href="https://www.imterra.com"> Proceed to protected page</a>
             <a class="btn btn-success btn-lg"
                    data-toggle="tooltip" data-placement="top"
                    title="Logout from otp authorization"

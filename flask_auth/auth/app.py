@@ -27,6 +27,10 @@ from smtplib import SMTPException
 import random
 import string
 
+import base64
+from Crypto import Random
+from Crypto.Cipher import AES
+
 # Create Flask application
 app = Flask(__name__)
 app.config.from_pyfile('config.py')
@@ -128,6 +132,8 @@ class ExtendedRegisterForm(RegisterForm):
 user_datastore = SQLAlchemyUserDatastore(db, User, Role)
 security = Security(app, user_datastore, register_form=ExtendedRegisterForm)
 
+# rand string key
+key = base64.b64encode('1234567891234567')
 
 # Create customized model view class
 class MyModelView(sqla.ModelView):
@@ -184,6 +190,7 @@ def admin():
                            get_url=url_for,
                            h=admin_helpers)
 
+
 @app.route('/new_scan/<id>', methods=[ 'GET','POST'])
 def scan(id):
     print('############')
@@ -191,12 +198,12 @@ def scan(id):
     print('############')
 
     form, user_data = get_form_user(request.form, current_user)
-    if request.method == "POST" and form.validate():   #never happens?
+    if request.method == "POST" and form.validate():
         print("presiel submitom")
         if form.validate_otp(id, user_data.rand_string):
             user_data.has_scanned = True
             user_datastore.commit()
-            print("prihlasil si sa, has_scanned sa zmenilo ", current_user.has_scanned)
+            #print("prihlasil si sa, has_scanned sa zmenilo ", current_user.has_scanned)
             return render_template('index.html', form=form)
         else:
             return render_template('admin/index.html', form=form,
@@ -206,9 +213,12 @@ def scan(id):
     else:
         print("nepresiel submitom")
 
+    #print ('######## user_data.rand_string ', user_data.rand_string)
     if user_data.rand_string is None:
-        user_data.rand_string = get_random()
+        rand_str = get_random()
+        user_data.rand_string = rand_str
         user_datastore.commit()
+    #print ('######## into qr code ', decrypt(user_data.rand_string))
     image = makeQr(login.current_user.id, user_data.rand_string)
     print(os.path.dirname(os.path.realpath(__file__)))
     image.save(os.path.dirname(os.path.realpath(__file__)) + "/static/qr" + id + ".png", "PNG")
@@ -264,12 +274,12 @@ def make_cookie():
     id = str(user_data.id)
 
     # redirect if already logged in
-    cookie = request.cookies.get('OTP_AUTH')
+    cookie = request.cookies.get('otp_auth')
     if cookie is not None:
 
         ck = Cookie.query.filter_by(value=cookie).first()
         if ck is not None:
-            print(' #### Cookie already exisiting ##### ')
+            print(' #### Cookie already existing ##### ')
             user_data.otp_auth = True
             user_datastore.commit()
             return redirect(url_for('admin.index', form=form,
@@ -282,6 +292,7 @@ def make_cookie():
         if form.validate_otp(id, user_data.rand_string):
             user_data.has_scanned = True
             user_data.otp_auth = True
+            #user_data.rand_string = None
             user_datastore.commit()
             rand_string = get_random()
             hashed_cook = hashlib.sha512((id + rand_string).encode('utf-8')).hexdigest()
@@ -296,7 +307,7 @@ def make_cookie():
                                     form=form))
             resp.set_cookie('otp_auth', hashed_cook, httponly=False, domain='.imterra.com')
             # to run on localhost comment line above, de-comment line below
-            #resp.set_cookie('OTP_AUTH', hashed_cook, httponly=False)
+            #resp.set_cookie('otp_auth', hashed_cook, httponly=False)
             user_data.otp_auth = True
             user_datastore.commit()
             return resp
@@ -311,9 +322,9 @@ def resolve_cookie():
     print('############')
     print('auth')
     print('############')
-    cookie = request.cookies.get('OTP_AUTH')
-    print('#####')
-    print(cookie)
+    cookie = request.cookies.get('otp_auth')
+    #print('#####')
+    #print(cookie)
     if cookie is None:
         print('failing at cookie is none')
         abort(401)
@@ -331,7 +342,7 @@ def delete_cookie():
     print('############')
     form, user_data = get_form_user(request.form, current_user)
     user_data = user_datastore.find_user(email=str(current_user))
-    cookie = request.cookies.get('OTP_AUTH')
+    cookie = request.cookies.get('otp_auth')
     if cookie is None:
         print('none cookie')
         abort(401)
@@ -562,6 +573,27 @@ def serve_pil_image(pil_img):
     return send_file(img_io, mimetype='image/png')
 
 
+def encrypt( raw ):
+    raw = _pad(raw)
+    iv = Random.new().read( AES.block_size )
+    cipher = AES.new(key, AES.MODE_CBC, iv )
+    return base64.b64encode(iv + cipher.encrypt(raw))
+
+
+def decrypt( enc ):
+    enc = base64.b64decode(enc)
+    iv = enc[:AES.block_size]
+    cipher = AES.new(key, AES.MODE_CBC, iv)
+    return _unpad(cipher.decrypt(enc[AES.block_size:])).decode('utf-8')
+
+
+def _pad( s):
+    return s + (AES.block_size - len(s) % AES.block_size) * chr(AES.block_size - len(s) % AES.block_size)
+
+def _unpad(s):
+    return s[:-ord(s[len(s) - 1:])]
+
+
 if __name__ == '__main__':
 
     # Build a sample db on the fly, if one does not exist yet.
@@ -573,4 +605,4 @@ if __name__ == '__main__':
 
     # Start app
     app.config['TEMPLATES_AUTO_RELOAD'] = True
-    app.run(debug=True)
+    app.run(debug=True, threaded=True)
