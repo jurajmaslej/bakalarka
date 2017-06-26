@@ -314,7 +314,7 @@ def make_cookie():
                                     get_url=url_for,
                                     h=admin_helpers,
                                     form=form))
-            resp.header['X-User'] = user_data.email
+            resp.headers['X-User'] = user_data.email
             resp.set_cookie('otp_auth', hashed_cook, httponly=False, domain='.imterra.com')
             # to run on localhost comment line above, de-comment line below
             #resp.set_cookie('otp_auth', hashed_cook, httponly=False)
