@@ -26,10 +26,12 @@ from smtplib import SMTPException
 
 import random
 import string
-
+import sys
 import base64
 from Crypto import Random
 from Crypto.Cipher import AES
+
+import StringIO
 
 # Create Flask application
 app = Flask(__name__)
@@ -134,6 +136,8 @@ security = Security(app, user_datastore, register_form=ExtendedRegisterForm)
 
 # rand string key
 key = base64.b64encode('1234567891234567')
+#png_key = base64.b64encode(Random.new().read(AES.block_size))
+png_key = '12345'
 
 # Create customized model view class
 class MyModelView(sqla.ModelView):
@@ -214,15 +218,20 @@ def scan(id):
         print("nepresiel submitom")
 
     #print ('######## user_data.rand_string ', user_data.rand_string)
-    if user_data.rand_string is None:
-        rand_str = get_random()
-        user_data.rand_string = rand_str
-        user_datastore.commit()
+    #if user_data.rand_string is None:
+    rand_str = get_random()
+    user_data.rand_string = rand_str
+    user_datastore.commit()
     #print ('######## into qr code ', decrypt(user_data.rand_string))
     image = makeQr(login.current_user.id, user_data.rand_string)
-    print(os.path.dirname(os.path.realpath(__file__)))
-    image.save(os.path.dirname(os.path.realpath(__file__)) + "/static/qr" + id + ".png", "PNG")
-    return render_template('user.html', form=form)
+    #print(os.path.dirname(os.path.realpath(__file__)))
+    filename = os.path.dirname(os.path.realpath(__file__)) + "/static/qr" + id + ".png"
+
+    string_saver = StringIO.StringIO()
+    image.save(string_saver, "PNG")  # image.save(filename, "PNG")
+    qr_image = base64.b64encode(string_saver.getvalue())
+
+    return render_template('user.html', form=form,  qr_image=qr_image)
 
 @app.route('/scan_new_dev/<id>', methods=[ 'GET','POST'])
 def scan_new_dev(id):
@@ -305,6 +314,7 @@ def make_cookie():
                                     get_url=url_for,
                                     h=admin_helpers,
                                     form=form))
+            resp.header['X-User'] = user_data.email
             resp.set_cookie('otp_auth', hashed_cook, httponly=False, domain='.imterra.com')
             # to run on localhost comment line above, de-comment line below
             #resp.set_cookie('otp_auth', hashed_cook, httponly=False)
@@ -517,7 +527,7 @@ def sendsmtp(mail, new_passwd):
 
     sender = 'juraj.maslej@gmail.com'
     recipient = mail
-    passwd = 'xb7mj7ar'
+    passwd = 'xxxxxxxxx'
     msg.attach(MIMEText(email_text))
     msg['From'] = 'juraj.maslej@gmail.com'
     msg['Subject'] = 'Request for new password'
@@ -542,7 +552,8 @@ def sendsmtp(mail, new_passwd):
 
 
 def get_random():
-    tmp_pass = ''.join(random.choice(string.ascii_lowercase + string.digits) for i in range(10))
+    #tmp_pass = ''.join(random.choice(string.ascii_lowercase + string.digits) for i in range(10))
+    tmp_pass = ''.join(random.SystemRandom().choice(string.ascii_uppercase + string.digits) for _ in range(30))
     return tmp_pass
 
 
@@ -572,6 +583,45 @@ def serve_pil_image(pil_img):
     img_io.seek(0)
     return send_file(img_io, mimetype='image/png')
 
+
+def encrypt_png(key, filename):
+    chunk_size = 64*1024
+    output_file = filename+".enc"
+    file_size = str(os.path.getsize(filename)).zfill(16)
+    IV = ''
+    for i in range(16):
+        IV += chr(random.randint(0, 0xFF))
+    encryptor = AES.new(key, AES.MODE_CBC, IV)
+    with open(filename, 'rb') as inputfile:
+        with open(output_file, 'wb') as outf:
+            outf.write(file_size)
+            outf.write(IV)
+            while True:
+                chunk = inputfile.read(chunk_size)
+                if len(chunk) == 0:
+                    break
+                elif len(chunk) % 16 != 0:
+                   chunk += ' '*(16 - len(chunk)%16)
+                outf.write(encryptor.encrypt(chunk))
+
+def decrypt_png(key, filename):
+        chunk_size = 64*1024
+        output_file = filename[:-4]
+        with open(filename, 'rb') as inf:
+            filesize = long(inf.read(16))
+            IV = inf.read(16)
+            decryptor = AES.new(key, AES.MODE_CBC, IV)
+            with open(output_file, 'wb') as outf:
+                while True:
+                    chunk = inf.read(chunk_size)
+                    if len(chunk)==0:
+                        break
+                    outf.write(decryptor.decrypt(chunk))
+                outf.truncate(filesize)
+
+def getKey(password):
+    hasher = hashlib.sha512(password)
+    return hasher.digest()
 
 def encrypt( raw ):
     raw = _pad(raw)
